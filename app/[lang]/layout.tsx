@@ -33,7 +33,7 @@ export default async function LangLayout(props: LayoutProps<"/[lang]">) {
   const d = getDict(lang);
   const nav = [
     ["jobs", d.nav.jobs], ["companies", d.nav.companies], ["salaries", d.nav.salaries],
-    ["guides", d.nav.guides], ["cv", d.nav.cv],
+    ["guides", d.nav.guides], ["blog", d.nav.blog], ["cv", d.nav.cv],
   ] as const;
 
   return (

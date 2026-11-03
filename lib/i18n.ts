@@ -4,7 +4,7 @@ export const isLocale = (x: string): x is Locale => (LOCALES as readonly string[
 
 const en = {
   brandTag: "IT jobs · GCC + India",
-  nav: { jobs: "Jobs", companies: "Companies", salaries: "Salaries", guides: "Guides", alerts: "Job alerts", employers: "For employers", saved: "My jobs", login: "Sign in", cv: "CV match" },
+  nav: { jobs: "Jobs", companies: "Companies", salaries: "Salaries", guides: "Guides", blog: "Blog", alerts: "Job alerts", employers: "For employers", saved: "My jobs", login: "Sign in", cv: "CV match" },
   heroTitle: "Every IT job in the Gulf & India. One search.",
   heroSub: "Straight from company career pages — with salary, visa sponsorship and remote labels you can trust.",
   searchPlaceholder: 'Skill or title — "React", "SAP FICO", "SOC analyst"',
@@ -49,6 +49,8 @@ const en = {
     { name: "Hiring pack", price: "$300–1,000", unit: "/ month", items: ["Unlimited jobs", "CV database access", "XML / ATS feed import", "Company page branding"] },
   ],
   form: { title: "Job title", company: "Company", location: "Location", salaryMin: "Salary min", salaryMax: "Salary max", currency: "Currency", description: "Description", applyUrl: "Apply URL or email", visaOffered: "We sponsor visas", submit: "Submit for review", submitted: "Thanks! We'll review your job within 24 hours." },
+  blogTitle: "Tech news", blogSub: "What is happening in tech across the Gulf and India — AI, dev tools, security and careers.",
+  blogPage: { all: "All", hot: "Hot", minRead: "{n} min read", back: "All posts", more: "More news", empty: "No posts in this category yet.", cat: { ai: "AI", dev: "Development", security: "Security", cloud: "Cloud", career: "Career" } },
   guidesTitle: "Moving guides", guidesSub: "Visa, Iqama and cost of living — what developers actually need to know.",
   costTitle: "Monthly cost of living for a single developer",
   guidesPage: { all: "All", fromIndia: "India → Gulf", minRead: "{n} min read", updated: "Updated", journeyTitle: "Your move, step by step", journeySub: "Typical timeline from first application to having your residence ID.", costTitle: "What's left after living costs", costSub: "Median backend salary minus rent, transport and food for one person. Bar length = salary in USD.", leftOver: "Left to save", medianSalary: "Median", perMonth: "/ mo", ofSalary: "{n}% of salary", showTable: "Show as table", scamTitle: "Never pay for a visa" }, rent: "1BR rent", transport: "Transport", food: "Food & groceries", total: "Total (approx.)",
@@ -66,7 +68,7 @@ export type Dict = typeof en;
 const ar: Dict = {
   ...en,
   brandTag: "وظائف تقنية · الخليج + الهند",
-  nav: { jobs: "الوظائف", companies: "الشركات", salaries: "الرواتب", guides: "أدلة", alerts: "تنبيهات الوظائف", employers: "لأصحاب العمل", saved: "وظائفي", login: "تسجيل الدخول", cv: "مطابقة السيرة" },
+  nav: { jobs: "الوظائف", companies: "الشركات", salaries: "الرواتب", guides: "أدلة", blog: "المدونة", alerts: "تنبيهات الوظائف", employers: "لأصحاب العمل", saved: "وظائفي", login: "تسجيل الدخول", cv: "مطابقة السيرة" },
   heroTitle: "كل وظائف التقنية في الخليج والهند. بحث واحد.",
   heroSub: "مباشرة من صفحات توظيف الشركات — مع الراتب، وكفالة التأشيرة، وخيارات العمل عن بُعد.",
   searchPlaceholder: 'مهارة أو مسمى — "React"، "SAP FICO"، "محلل SOC"',
@@ -111,6 +113,8 @@ const ar: Dict = {
     { name: "باقة التوظيف", price: "$300–1,000", unit: "/ شهرياً", items: ["وظائف غير محدودة", "الوصول لقاعدة السير الذاتية", "استيراد XML / ATS", "صفحة شركة مخصصة"] },
   ],
   form: { title: "المسمى الوظيفي", company: "الشركة", location: "الموقع", salaryMin: "أدنى راتب", salaryMax: "أعلى راتب", currency: "العملة", description: "الوصف", applyUrl: "رابط التقديم أو البريد", visaOffered: "نوفر كفالة التأشيرة", submit: "إرسال للمراجعة", submitted: "شكراً! سنراجع الوظيفة خلال 24 ساعة." },
+  blogTitle: "أخبار التقنية", blogSub: "ما يحدث في عالم التقنية في الخليج والهند — الذكاء الاصطناعي والتطوير والأمن والمسار المهني.",
+  blogPage: { all: "الكل", hot: "رائج", minRead: "{n} دقائق قراءة", back: "كل المقالات", more: "أخبار أخرى", empty: "لا توجد مقالات في هذا القسم بعد.", cat: { ai: "الذكاء الاصطناعي", dev: "التطوير", security: "الأمن", cloud: "السحابة", career: "المسار المهني" } },
   guidesTitle: "أدلة الانتقال", guidesSub: "التأشيرة والإقامة وتكلفة المعيشة — ما يحتاج المطور معرفته.",
   costTitle: "تكلفة المعيشة الشهرية لمطور أعزب",
   guidesPage: { all: "الكل", fromIndia: "الهند ← الخليج", minRead: "{n} دقائق قراءة", updated: "تحديث", journeyTitle: "انتقالك خطوة بخطوة", journeySub: "الجدول الزمني المعتاد من أول طلب حتى بطاقة الإقامة.", costTitle: "ما يتبقى بعد تكاليف المعيشة", costSub: "الراتب الوسيط ناقص الإيجار والمواصلات والطعام لشخص واحد. طول الشريط = الراتب بالدولار.", leftOver: "المتبقي للادخار", medianSalary: "الوسيط", perMonth: "/ شهرياً", ofSalary: "{n}% من الراتب", showTable: "عرض كجدول", scamTitle: "لا تدفع أبداً مقابل التأشيرة" }, rent: "إيجار غرفة واحدة", transport: "المواصلات", food: "الطعام", total: "الإجمالي (تقريبي)",

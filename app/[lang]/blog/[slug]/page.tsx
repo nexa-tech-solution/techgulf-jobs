@@ -1,0 +1,74 @@
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import { getDict, type Locale } from "@/lib/i18n";
+import { POSTS, coverOf, getPost, readMins } from "@/lib/blog";
+import { Tag } from "@/components/ui";
+import { BackIcon } from "@/components/icons";
+
+export const generateStaticParams = () => POSTS.map((p) => ({ slug: p.slug }));
+
+export async function generateMetadata(props: PageProps<"/[lang]/blog/[slug]">): Promise<Metadata> {
+  const post = getPost((await props.params).slug);
+  return post ? { title: post.title, description: post.summary, openGraph: { images: [coverOf(post)] } } : {};
+}
+
+export default function BlogPost(props: PageProps<"/[lang]/blog/[slug]">) {
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-3xl px-4 py-8"><div className="h-[480px] animate-pulse rounded-2xl bg-surface" /></div>}>
+      <PostBody params={props.params} />
+    </Suspense>
+  );
+}
+
+async function PostBody({ params }: { params: PageProps<"/[lang]/blog/[slug]">["params"] }) {
+  const { lang: l, slug } = await params;
+  const lang = l as Locale;
+  const d = getDict(lang);
+  const post = getPost(slug);
+  if (!post) notFound();
+  const more = POSTS.filter((p) => p.slug !== slug).slice(0, 3);
+  const date = new Date(post.date).toLocaleDateString(lang === "ar" ? "ar-AE" : "en-GB", { day: "numeric", month: "long", year: "numeric" });
+
+  return (
+    <div className="mx-auto max-w-3xl px-4 py-8">
+      <Link href={`/${lang}/blog`} className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink"><BackIcon /> {d.blogPage.back}</Link>
+      <article className="mt-6">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+          <span className="font-semibold uppercase tracking-wide text-primary">{d.blogPage.cat[post.category]}</span>
+          {post.hot && <span className="rounded bg-red-500/10 px-1.5 py-0.5 font-semibold text-red-600 dark:text-red-400">{d.blogPage.hot}</span>}
+          <span aria-hidden>·</span><span>{date}</span>
+          <span aria-hidden>·</span><span>{d.blogPage.minRead.replace("{n}", String(readMins(post)))}</span>
+        </div>
+        <div dir="ltr" lang="en" className="text-start">
+          <h1 className="mt-3 text-[28px] font-bold leading-tight tracking-tight md:text-[38px]">{post.title}</h1>
+          <p className="mt-3 text-lg text-muted">{post.summary}</p>
+          <p className="mt-4 text-sm text-muted">{post.author}</p>
+          <div className="relative mt-6 aspect-[16/9] overflow-hidden rounded-2xl bg-surface-2">
+            <Image src={coverOf(post)} alt={post.coverAlt} fill priority sizes="(min-width: 768px) 736px, 100vw" className="object-cover" />
+          </div>
+          <div className="mt-8 space-y-4 pt-4 leading-7">
+            {post.body.map((b, i) =>
+              b.startsWith("## ") ? <h2 key={i} className="pt-4 text-xl font-semibold">{b.slice(3)}</h2>
+              : b.startsWith("- ") ? <p key={i} className="flex gap-3 ps-1"><span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden />{b.slice(2)}</p>
+              : <p key={i}>{b}</p>)}
+          </div>
+          <div className="mt-8 flex flex-wrap gap-2">{post.tags.map((t) => <Tag key={t}>{t}</Tag>)}</div>
+        </div>
+      </article>
+      <section className="mt-12 border-t border-line pt-6">
+        <h2 className="font-semibold">{d.blogPage.more}</h2>
+        <div className="mt-2">
+          {more.map((p) => (
+            <Link key={p.slug} href={`/${lang}/blog/${p.slug}`} dir="ltr" className="group flex items-center gap-4 border-b border-line py-3 text-start">
+              <span className="relative h-14 w-24 shrink-0 overflow-hidden rounded-lg bg-surface-2"><Image src={coverOf(p)} alt="" fill sizes="96px" className="object-cover" /></span>
+              <span className="font-medium group-hover:text-primary">{p.title}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
