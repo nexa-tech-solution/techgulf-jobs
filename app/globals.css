@@ -1,26 +1,54 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --primary: #0f766e; --on-primary: #ffffff; --accent: #b7791f; --ink: #0f172a; --muted: #64748b;
+  --surface: #ffffff; --surface-2: #f8fafc; --border: #e2e8f0;
+  --success: #15803d; --warning: #b45309; --danger: #b91c1c;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --primary: #2dd4bf; --on-primary: #042f2e; --accent: #f6c453; --ink: #e2e8f0; --muted: #94a3b8;
+    --surface: #111827; --surface-2: #0b1220; --border: #1f2937;
+    --success: #4ade80; --warning: #fbbf24; --danger: #f87171;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --primary: #2dd4bf; --on-primary: #042f2e; --accent: #f6c453; --ink: #e2e8f0; --muted: #94a3b8;
+  --surface: #111827; --surface-2: #0b1220; --border: #1f2937;
+  --success: #4ade80; --warning: #fbbf24; --danger: #f87171;
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-primary: var(--primary); --color-on-primary: var(--on-primary); --color-accent: var(--accent);
+  --color-ink: var(--ink); --color-muted: var(--muted); --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2); --color-line: var(--border); --color-success: var(--success);
+  --color-warning: var(--warning); --color-danger: var(--danger);
+  --font-sans: var(--font-plex-sans), var(--font-plex-arabic), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--surface-2); color: var(--ink); font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
 }
+
+/* Calm, flat surfaces — content first, no decorative glow */
+@utility card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem;
+  transition: border-color .15s;
+}
+@utility card-hover { &:hover { border-color: color-mix(in srgb, var(--ink) 25%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .card-hover:hover { transform: none; } }
+html[lang="ar"] body { font-size: 17px; }
+html[lang="ar"] h1, html[lang="ar"] h2, html[lang="ar"] h3 { line-height: 1.45; }
+html[lang="ar"] p { line-height: 1.8; }
+/* Flip directional icons only */
+[dir="rtl"] .flip-rtl { transform: scaleX(-1); }
+.prose-job { max-width: 72ch; line-height: 1.6; }
+html[lang="ar"] .prose-job { line-height: 1.8; }
+summary::-webkit-details-marker { display: none; }

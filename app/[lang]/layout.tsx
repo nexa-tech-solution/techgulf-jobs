@@ -1,0 +1,85 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { IBM_Plex_Sans, IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from "next/font/google";
+import { LOCALES, getDict, isLocale } from "@/lib/i18n";
+import { LangSwitch, SearchHotkey, ThemeToggle } from "@/components/client";
+import { MenuIcon } from "@/components/icons";
+import "../globals.css";
+
+const plexSans = IBM_Plex_Sans({ variable: "--font-plex-sans", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+const plexArabic = IBM_Plex_Sans_Arabic({ variable: "--font-plex-arabic", subsets: ["arabic"], weight: ["400", "500", "600", "700"], preload: false });
+const plexMono = IBM_Plex_Mono({ variable: "--font-plex-mono", subsets: ["latin"], weight: ["500"], preload: false });
+
+export const generateStaticParams = () => LOCALES.map((lang) => ({ lang }));
+
+export async function generateMetadata(props: LayoutProps<"/[lang]">): Promise<Metadata> {
+  const { lang } = await props.params;
+  const d = getDict(isLocale(lang) ? lang : "en");
+  return {
+    title: { default: `TechGulf Jobs — ${d.heroTitle}`, template: "%s · TechGulf Jobs" },
+    description: d.heroSub,
+    alternates: { languages: { en: "/en", ar: "/ar" } },
+  };
+}
+
+// Applies saved theme before paint to avoid a flash
+const themeScript = `try{var t=localStorage.getItem("tgj:theme");if(t)document.documentElement.dataset.theme=t}catch(e){}`;
+
+export default async function LangLayout(props: LayoutProps<"/[lang]">) {
+  const { lang } = await props.params;
+  if (!isLocale(lang)) notFound();
+  const d = getDict(lang);
+  const nav = [
+    ["jobs", d.nav.jobs], ["companies", d.nav.companies], ["salaries", d.nav.salaries],
+    ["guides", d.nav.guides], ["alerts", d.nav.alerts], ["cv", d.nav.cv],
+  ] as const;
+
+  return (
+    <html lang={lang} dir={lang === "ar" ? "rtl" : "ltr"} suppressHydrationWarning
+      className={`${plexSans.variable} ${plexArabic.variable} ${plexMono.variable} h-full antialiased`}>
+      <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
+      <body className="flex min-h-full flex-col">
+        <SearchHotkey />
+        <header className="sticky top-0 z-30 border-b border-line/70 bg-surface">
+          <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4">
+            <Link href={`/${lang}`} className="me-4 text-[17px] font-bold tracking-tight" dir="ltr">techgulf<span className="text-primary">.</span>jobs</Link>
+            <nav className="hidden items-center gap-1 lg:flex">
+              {nav.map(([href, label]) => (
+                <Link key={href} href={`/${lang}/${href}`} className="rounded-lg px-3 py-2 text-sm font-medium text-muted transition hover:bg-surface-2 hover:text-ink">{label}</Link>
+              ))}
+            </nav>
+            <div className="ms-auto flex items-center">
+              <LangSwitch label={d.language} />
+              <ThemeToggle label={d.theme} />
+              <Link href={`/${lang}/saved`} className="hidden h-11 items-center rounded-lg px-3 text-sm font-medium text-muted hover:text-ink sm:inline-flex">{d.nav.saved}</Link>
+              <Link href={`/${lang}/login`} className="hidden h-10 items-center rounded-lg border border-line bg-surface/60 px-4 text-sm font-semibold hover:border-primary sm:inline-flex">{d.nav.login}</Link>
+              <Link href={`/${lang}/employers`} className="ms-2 hidden h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary md:inline-flex">{d.nav.employers}</Link>
+              <details className="relative lg:hidden">
+                <summary className="grid h-11 w-11 cursor-pointer place-items-center rounded-lg text-muted" aria-label="Menu"><MenuIcon /></summary>
+                <div className="card absolute end-0 top-12 w-60 p-2">
+                  {[...nav, ["saved", d.nav.saved], ["login", d.nav.login], ["employers", d.nav.employers]].map(([href, label]) => (
+                    <Link key={href} href={`/${lang}/${href}`} className="flex h-11 items-center rounded-lg px-3 text-sm font-medium hover:bg-surface-2">{label}</Link>
+                  ))}
+                </div>
+              </details>
+            </div>
+          </div>
+        </header>
+        <main className="flex-1">{props.children}</main>
+        <footer className="border-t border-line">
+          <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 text-sm sm:grid-cols-3">
+            <div>
+              <p className="font-bold" dir="ltr">techgulf<span className="text-primary">.</span>jobs</p>
+              <p className="mt-2 text-muted">{d.brandTag}</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              {nav.map(([href, label]) => <Link key={href} href={`/${lang}/${href}`} className="text-muted hover:text-ink">{label}</Link>)}
+            </div>
+            <p className="text-muted">{d.footerNote}</p>
+          </div>
+        </footer>
+      </body>
+    </html>
+  );
+}
