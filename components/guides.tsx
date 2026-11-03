@@ -70,7 +70,7 @@ export function GuidesHub({ d, lang }: { d: Dict; lang: string }) {
             </button>
           ))}
         </div>
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <div className="mt-6 grid items-start gap-4 md:grid-cols-2">
           {list.map((x) => (
             <details key={x.title} className="group rounded-2xl border border-line bg-surface transition open:border-ink/25">
               <summary className="cursor-pointer list-none p-5">
