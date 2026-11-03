@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { IBM_Plex_Sans, IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from "next/font/google";
 import { LOCALES, getDict, isLocale } from "@/lib/i18n";
 import { LangSwitch, SearchHotkey, ThemeToggle } from "@/components/client";
+import { HeaderAccount } from "@/components/account";
 import { MenuIcon } from "@/components/icons";
 import "../globals.css";
 
@@ -32,7 +33,7 @@ export default async function LangLayout(props: LayoutProps<"/[lang]">) {
   const d = getDict(lang);
   const nav = [
     ["jobs", d.nav.jobs], ["companies", d.nav.companies], ["salaries", d.nav.salaries],
-    ["guides", d.nav.guides], ["alerts", d.nav.alerts], ["cv", d.nav.cv],
+    ["guides", d.nav.guides], ["cv", d.nav.cv],
   ] as const;
 
   return (
@@ -53,7 +54,7 @@ export default async function LangLayout(props: LayoutProps<"/[lang]">) {
               <LangSwitch label={d.language} />
               <ThemeToggle label={d.theme} />
               <Link href={`/${lang}/saved`} className="hidden h-11 items-center rounded-lg px-3 text-sm font-medium text-muted hover:text-ink sm:inline-flex">{d.nav.saved}</Link>
-              <Link href={`/${lang}/login`} className="hidden h-10 items-center rounded-lg border border-line bg-surface/60 px-4 text-sm font-semibold hover:border-primary sm:inline-flex">{d.nav.login}</Link>
+              <HeaderAccount d={d} lang={lang} />
               <Link href={`/${lang}/employers`} className="ms-2 hidden h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary md:inline-flex">{d.nav.employers}</Link>
               <details className="relative lg:hidden">
                 <summary className="grid h-11 w-11 cursor-pointer place-items-center rounded-lg text-muted" aria-label="Menu"><MenuIcon /></summary>

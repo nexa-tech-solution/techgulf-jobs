@@ -112,7 +112,7 @@ export default async function Home(props: PageProps<"/[lang]">) {
             <h2 className="text-xl font-semibold">{d.alertCta.title}</h2>
             <p className="mt-1 text-muted">{d.alertCta.sub}</p>
           </div>
-          <Link href={`/${lang}/alerts`} className="inline-flex h-11 items-center rounded-lg bg-primary px-5 font-semibold text-on-primary hover:opacity-90">{d.alertCta.button}</Link>
+          <Link href={`/${lang}/jobs`} className="inline-flex h-11 items-center rounded-lg bg-primary px-5 font-semibold text-on-primary hover:opacity-90">{d.alertCta.button}</Link>
         </div>
       </section>
     </>

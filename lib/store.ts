@@ -2,11 +2,17 @@
 import { useSyncExternalStore } from "react";
 
 export type AppStatus = "saved" | "applied" | "interview" | "offer" | "rejected";
-export interface Alert { id: string; q: string; country: string; category: string; channel: string; frequency: string }
+export type Channel = "email" | "whatsapp" | "telegram";
+export interface Alert { id: string; key: string; filters: Record<string, string>; channels: Channel[]; frequency: "instant" | "daily" | "weekly"; createdAt: string }
+export interface User { name: string; email: string; provider: "google" | "linkedin" | "email" }
 
-type State = { jobs: Record<string, AppStatus>; alerts: Alert[] };
-const KEY = "tgj:v1";
-const EMPTY: State = { jobs: {}, alerts: [] };
+/** Stable key for a set of filters (ignores sort). */
+export const filterKey = (f: Record<string, string | undefined>) =>
+  Object.entries(f).filter(([k, v]) => v && k !== "sort").sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}=${v}`).join("&");
+
+type State = { jobs: Record<string, AppStatus>; alerts: Alert[]; user: User | null };
+const KEY = "tgj:v2";
+const EMPTY: State = { jobs: {}, alerts: [], user: null };
 let state: State = EMPTY;
 let loaded = false;
 const listeners = new Set<() => void>();
@@ -37,6 +43,18 @@ export const actions = {
     set({ ...state, jobs });
   },
   setStatus(id: string, s: AppStatus) { set({ ...state, jobs: { ...state.jobs, [id]: s } }); },
-  addAlert(a: Omit<Alert, "id">) { set({ ...state, alerts: [...state.alerts, { ...a, id: crypto.randomUUID() }] }); },
+  /** Saving a search = creating an alert. Delivered to the account email by default. */
+  saveSearch(filters: Record<string, string>) {
+    const key = filterKey(filters);
+    if (state.alerts.some((a) => a.key === key)) return;
+    const clean = Object.fromEntries(Object.entries(filters).filter(([k, v]) => v && k !== "sort"));
+    set({ ...state, alerts: [{ id: crypto.randomUUID(), key, filters: clean, channels: ["email"], frequency: "daily", createdAt: new Date().toISOString() }, ...state.alerts] });
+  },
+  removeAlertByKey(key: string) { set({ ...state, alerts: state.alerts.filter((a) => a.key !== key) }); },
+  updateAlert(id: string, patch: Partial<Pick<Alert, "channels" | "frequency">>) {
+    set({ ...state, alerts: state.alerts.map((a) => (a.id === id ? { ...a, ...patch } : a)) });
+  },
   removeAlert(id: string) { set({ ...state, alerts: state.alerts.filter((a) => a.id !== id) }); },
+  signIn(user: User) { set({ ...state, user }); },
+  signOut() { set({ ...state, user: null }); },
 };

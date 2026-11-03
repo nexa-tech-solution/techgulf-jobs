@@ -47,6 +47,10 @@ body {
 html[lang="ar"] body { font-size: 17px; }
 html[lang="ar"] h1, html[lang="ar"] h2, html[lang="ar"] h3 { line-height: 1.45; }
 html[lang="ar"] p { line-height: 1.8; }
+/* Chart series colours — one per city, stepped separately for dark */
+:root { --city-dubai: #2a78d6; --city-riyadh: #eb6834; --city-doha: #1baf7a; --city-bengaluru: #eda100; --pos: #2a78d6; --neg: #eb6834; }
+:root[data-theme="dark"] { --city-dubai: #3987e5; --city-riyadh: #d95926; --city-doha: #199e70; --city-bengaluru: #c98500; --pos: #3987e5; --neg: #d95926; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --city-dubai: #3987e5; --city-riyadh: #d95926; --city-doha: #199e70; --city-bengaluru: #c98500; --pos: #3987e5; --neg: #d95926; } }
 /* Flip directional icons only */
 [dir="rtl"] .flip-rtl { transform: scaleX(-1); }
 .prose-job { max-width: 72ch; line-height: 1.6; }

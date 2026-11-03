@@ -1,31 +1,48 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { getDict, type Locale } from "@/lib/i18n";
-import { COMPANIES } from "@/lib/mock-data";
-import { jobsByCompany } from "@/lib/jobs";
-import { Logo, PageHeader } from "@/components/ui";
+import { COMPANIES, JOBS } from "@/lib/mock-data";
+import type { Country } from "@/lib/types";
+import { PageHeader } from "@/components/ui";
+import { CompanyDirectory, type CompanyStats } from "@/components/company-directory";
 
-export const metadata: Metadata = { title: "Companies" };
+export const metadata: Metadata = { title: "Tech companies hiring in the Gulf & India" };
+
+const HQ_COUNTRY: [RegExp, Country][] = [[/UAE/, "AE"], [/Saudi/, "SA"], [/Qatar/, "QA"], [/India/, "IN"]];
+
+function stats(): CompanyStats[] {
+  return COMPANIES.filter((c) => c.ats !== "direct").map((company) => {
+    const jobs = JOBS.filter((j) => j.companySlug === company.slug);
+    const tagCount = new Map<string, number>();
+    jobs.flatMap((j) => j.tags).forEach((t) => tagCount.set(t, (tagCount.get(t) ?? 0) + 1));
+    return {
+      company,
+      country: HQ_COUNTRY.find(([re]) => re.test(company.hq))?.[1] ?? "AE",
+      open: jobs.length,
+      salaryPct: jobs.length ? Math.round((jobs.filter((j) => j.salary).length / jobs.length) * 100) : 0,
+      visa: jobs.some((j) => j.visaSponsored),
+      remote: jobs.some((j) => j.mode === "remote"),
+      tags: [...tagCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([t]) => t),
+      cities: [...new Set(jobs.map((j) => j.city).filter(Boolean) as string[])],
+    };
+  });
+}
 
 export default async function Companies(props: PageProps<"/[lang]/companies">) {
   const lang = (await props.params).lang as Locale;
   const d = getDict(lang);
-  const list = COMPANIES.filter((c) => c.ats !== "direct").sort((a, b) => jobsByCompany(b.slug).length - jobsByCompany(a.slug).length);
+  const items = stats();
+  const open = items.reduce((n, i) => n + i.open, 0);
+  const visa = items.filter((i) => i.visa).length;
   return (
     <>
-      <PageHeader title={d.companiesTitle} />
-      <div className="mx-auto grid max-w-6xl gap-3 px-4 py-6 sm:grid-cols-2 lg:grid-cols-3">
-        {list.map((c) => (
-          <Link key={c.slug} href={`/${lang}/companies/${c.slug}`} className="flex gap-3 card card-hover p-4">
-            <Logo company={c} />
-            <div className="min-w-0">
-              <p className="font-semibold">{c.name}</p>
-              <p className="text-sm text-muted">{c.industry} · {c.hq}</p>
-              <p className="mt-1 text-sm font-medium text-primary">{d.openJobs.replace("{n}", String(jobsByCompany(c.slug).length))}</p>
-            </div>
-          </Link>
-        ))}
-      </div>
+      <PageHeader title={d.companiesTitle} sub={d.companiesPage.sub}>
+        <dl className="mt-6 flex flex-wrap gap-x-10 gap-y-3">
+          {[[items.length, d.companiesPage.statCompanies], [open, d.companiesPage.statRoles], [visa, d.companiesPage.statVisa]].map(([n, l]) => (
+            <div key={l}><dt className="text-sm text-muted">{l}</dt><dd className="text-2xl font-semibold tabular-nums">{n}</dd></div>
+          ))}
+        </dl>
+      </PageHeader>
+      <div className="mx-auto max-w-6xl px-4 py-8"><CompanyDirectory d={d} lang={lang} items={items} /></div>
     </>
   );
 }

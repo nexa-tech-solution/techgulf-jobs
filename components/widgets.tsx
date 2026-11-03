@@ -1,78 +1,68 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
-import { actions, useStore, type AppStatus } from "@/lib/store";
+import { useEffect, useState } from "react";
+import { actions, useStore, type Alert, type AppStatus, type Channel } from "@/lib/store";
+import { describeFilters } from "@/lib/describe";
+import { filterJobs } from "@/lib/jobs";
+import { TODAY } from "@/lib/mock-data";
 import type { Dict, Locale } from "@/lib/i18n";
 import type { Job } from "@/lib/types";
-import { CATEGORIES, COUNTRY_CODES, TO_AED } from "@/lib/format";
-import { SALARY_BENCHMARKS } from "@/lib/mock-data";
+import { CATEGORIES } from "@/lib/format";
 import { inputCls } from "./ui";
+import { Select } from "./select";
 import { BellIcon, CheckIcon, UploadIcon } from "./icons";
 
-/* ---------- Alerts ---------- */
-export function AlertForm({ d, initial }: { d: Dict; initial: { q?: string; country?: string; category?: string } }) {
-  const { alerts } = useStore();
-  const [channel, setChannel] = useState("whatsapp");
-  const [done, setDone] = useState(false);
-  return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-      <form
-        className="space-y-4 card p-5"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const f = new FormData(e.currentTarget);
-          actions.addAlert({ q: String(f.get("q")), country: String(f.get("country")), category: String(f.get("category")), channel, frequency: String(f.get("frequency")) });
-          setDone(true);
-        }}
-      >
-        <L label={d.keywords}><input name="q" defaultValue={initial.q} placeholder="React, Node.js" className={inputCls} /></L>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <L label={d.anywhere}>
-            <select name="country" defaultValue={initial.country ?? ""} className={inputCls}>
-              <option value="">{d.anywhere}</option>{COUNTRY_CODES.map((c) => <option key={c} value={c}>{d.country[c]}</option>)}
-            </select>
-          </L>
-          <L label={d.allFields}>
-            <select name="category" defaultValue={initial.category ?? ""} className={inputCls}>
-              <option value="">{d.allFields}</option>{CATEGORIES.map((c) => <option key={c} value={c}>{d.category[c]}</option>)}
-            </select>
-          </L>
-        </div>
-        <fieldset>
-          <legend className="mb-2 text-sm font-medium">{d.channel}</legend>
-          <div className="grid grid-cols-3 gap-2">
-            {(["whatsapp", "telegram", "email"] as const).map((c) => (
-              <button type="button" key={c} onClick={() => setChannel(c)} aria-pressed={channel === c}
-                className={`h-11 rounded-lg border text-sm font-medium ${channel === c ? "border-primary bg-primary/10 text-primary" : "border-line"}`}>{d[c]}</button>
-            ))}
-          </div>
-        </fieldset>
-        <L label={channel === "email" ? d.email : d.phone}>
-          <input required type={channel === "email" ? "email" : "tel"} dir="ltr" placeholder={channel === "email" ? "you@example.com" : "+971 50 123 4567"} className={inputCls} />
-        </L>
-        <L label={d.frequency}>
-          <select name="frequency" className={inputCls}><option value="instant">{d.instant}</option><option value="daily">{d.daily}</option><option value="weekly">{d.weekly}</option></select>
-        </L>
-        <label className="flex items-start gap-3 text-sm text-muted"><input required type="checkbox" className="mt-1 h-4 w-4 accent-[var(--primary)]" />{d.consent}</label>
-        <button className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary font-semibold text-on-primary"><BellIcon />{d.createAlert}</button>
-        {done && <p className="flex items-center gap-2 text-sm text-success" role="status"><CheckIcon />{d.alertCreated}</p>}
-      </form>
-      <div className="card p-5 lg:self-start">
-        <h2 className="font-semibold">{d.yourAlerts}</h2>
-        {alerts.length === 0 && <p className="mt-2 text-sm text-muted">—</p>}
-        <ul className="mt-3 space-y-2">
-          {alerts.map((a) => (
-            <li key={a.id} className="flex items-center justify-between gap-2 rounded-lg border border-line p-3 text-sm">
-              <div>
-                <p className="font-medium">{a.q || d.allFields}</p>
-                <p className="text-xs text-muted">{[a.country && d.country[a.country as keyof Dict["country"]], d[a.channel as "email"], d[a.frequency as "daily"]].filter(Boolean).join(" · ")}</p>
-              </div>
-              <button onClick={() => actions.removeAlert(a.id)} className="h-11 px-2 text-danger">{d.delete}</button>
-            </li>
-          ))}
-        </ul>
+/* ---------- Alerts (managed inside My jobs) ---------- */
+function AlertsManager({ d, lang, jobs }: { d: Dict; lang: Locale; jobs: Job[] }) {
+  const { alerts, user } = useStore();
+  if (alerts.length === 0)
+    return (
+      <div className="mt-6 rounded-xl border border-dashed border-line bg-surface p-8 text-center">
+        <BellIcon className="mx-auto h-8 w-8 text-muted" />
+        <p className="mt-3 font-semibold">{d.account.noAlerts}</p>
+        <p className="mx-auto mt-1 max-w-sm text-sm text-muted">{d.account.noAlertsHint}</p>
+        <Link href={`/${lang}/jobs`} className="mt-4 inline-flex h-11 items-center rounded-lg bg-primary px-5 font-semibold text-on-primary">{d.nav.jobs}</Link>
       </div>
-    </div>
+    );
+  const channels: Channel[] = ["email", "whatsapp", "telegram"];
+  return (
+    <ul className="mt-4 space-y-3">
+      {alerts.map((a) => {
+        const n = filterJobs(jobs, a.filters, TODAY).length;
+        const qs = new URLSearchParams(a.filters).toString();
+        return (
+          <li key={a.id} className="rounded-xl border border-line bg-surface p-4 md:p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-semibold">{describeFilters(a.filters, d)}</p>
+                <Link href={`/${lang}/jobs${qs ? `?${qs}` : ""}`} className="text-sm text-primary hover:underline">{d.account.matching.replace("{n}", String(n))}</Link>
+              </div>
+              <button onClick={() => actions.removeAlert(a.id)} className="h-9 rounded-lg px-3 text-sm text-muted hover:text-danger">{d.delete}</button>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4">
+              <span className="me-1 text-xs text-muted">{d.account.sendTo}</span>
+              {channels.map((c) => {
+                const on = a.channels.includes(c);
+                return (
+                  <button key={c} type="button" aria-pressed={on}
+                    onClick={() => {
+                      const next = on ? a.channels.filter((x) => x !== c) : [...a.channels, c];
+                      if (next.length) actions.updateAlert(a.id, { channels: next });
+                    }}
+                    className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition ${on ? "border-primary bg-primary/10 text-primary" : "border-dashed border-line text-muted hover:text-ink"}`}>
+                    {on ? "✓" : "+"} {d[c]}{c === "email" && on && user && <span className="font-normal text-muted" dir="ltr">({user.email})</span>}
+                  </button>
+                );
+              })}
+              <Select variant="pill" placeholder={d.frequency} value={a.frequency} onChange={(v) => actions.updateAlert(a.id, { frequency: v as Alert["frequency"] })}
+                className="ms-auto [&>button]:h-8 [&>button]:border-line [&>button]:bg-surface [&>button]:text-[13px] [&>button]:text-ink"
+                options={[{ value: "instant", label: d.instant }, { value: "daily", label: d.daily }, { value: "weekly", label: d.weekly }]} />
+            </div>
+          </li>
+        );
+      })}
+      <li className="text-xs text-muted">{d.account.whatsappNote}</li>
+    </ul>
   );
 }
 
@@ -85,17 +75,23 @@ const STATUSES: AppStatus[] = ["saved", "applied", "interview", "offer", "reject
 
 export function MyJobs({ d, lang, jobs }: { d: Dict; lang: Locale; jobs: Job[] }) {
   const store = useStore();
-  const [tab, setTab] = useState<"saved" | "tracker">("saved");
+  const [tab, setTab] = useState<"saved" | "tracker" | "alerts">("saved");
+  useEffect(() => {
+    const sync = () => { if (location.hash === "#alerts") setTab("alerts"); };
+    sync();
+    addEventListener("hashchange", sync);
+    return () => removeEventListener("hashchange", sync);
+  }, []);
   const mine = jobs.filter((j) => store.jobs[j.id]);
   return (
     <div>
       <div className="flex gap-1 border-b border-line" role="tablist">
-        {([["saved", d.savedTab], ["tracker", d.trackerTab]] as const).map(([k, label]) => (
-          <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
-            className={`h-11 border-b-2 px-4 text-sm font-medium ${tab === k ? "border-primary text-primary" : "border-transparent text-muted"}`}>{label} ({mine.length})</button>
+        {([["saved", d.savedTab, mine.length], ["tracker", d.trackerTab, mine.filter((j) => store.jobs[j.id] !== "saved").length], ["alerts", d.account.alertsTab, store.alerts.length]] as const).map(([k, label, n]) => (
+          <button key={k} role="tab" aria-selected={tab === k} onClick={() => { setTab(k); history.replaceState(null, "", k === "alerts" ? "#alerts" : location.pathname); }}
+            className={`-mb-px h-11 border-b-2 px-4 text-sm font-medium ${tab === k ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"}`}>{label} <span className="text-muted">{n}</span></button>
         ))}
       </div>
-      {mine.length === 0 ? (
+      {tab === "alerts" ? <AlertsManager d={d} lang={lang} jobs={jobs} /> : mine.length === 0 ? (
         <div className="mt-6 rounded-xl border border-dashed border-line bg-surface p-8 text-center">
           <p className="text-muted">{d.emptySaved}</p>
           <Link href={`/${lang}/jobs`} className="mt-4 inline-flex h-11 items-center rounded-lg bg-primary px-5 font-semibold text-on-primary">{d.nav.jobs}</Link>
@@ -122,9 +118,7 @@ export function MyJobs({ d, lang, jobs }: { d: Dict; lang: Locale; jobs: Job[] }
                   <div key={j.id} className="rounded-lg border border-line bg-surface-2 p-3 text-sm">
                     <Link href={`/${lang}/jobs/${j.id}`} className="font-medium hover:text-primary"><bdi>{j.title}</bdi></Link>
                     <p className="text-xs text-muted">{j.company}</p>
-                    <select aria-label="Status" value={s} onChange={(e) => actions.setStatus(j.id, e.target.value as AppStatus)} className="mt-2 h-9 w-full rounded-md border border-line bg-surface px-2 text-xs">
-                      {STATUSES.map((x) => <option key={x} value={x}>{d.status[x]}</option>)}
-                    </select>
+                    <Select className="mt-2 [&>button]:h-9 [&>button]:text-xs" placeholder="Status" value={s} onChange={(v) => actions.setStatus(j.id, v as AppStatus)} options={STATUSES.map((x) => ({ value: x, label: d.status[x] }))} />
                   </div>
                 ))}
               </div>
@@ -132,55 +126,6 @@ export function MyJobs({ d, lang, jobs }: { d: Dict; lang: Locale; jobs: Job[] }
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-/* ---------- Salary explorer ---------- */
-export function SalaryExplorer({ d }: { d: Dict }) {
-  const [cat, setCat] = useState("");
-  const [city, setCity] = useState("");
-  const cities = [...new Set(SALARY_BENCHMARKS.map((b) => b.city))];
-  const rows = SALARY_BENCHMARKS.filter((b) => (!cat || b.category === cat) && (!city || b.city === city));
-  const fmt = (n: number, cur: string) => (cur === "INR" ? `₹${(n / 1e5).toFixed(0)} LPA` : `${cur} ${n.toLocaleString("en-US")}`);
-  // Bars normalised to AED/month so roles are visually comparable
-  const toAedMonth = (n: number, cur: string, per: string) => (per === "year" ? n / 12 : n) * (TO_AED[cur] ?? 1);
-  const maxAed = Math.max(...rows.map((r) => toAedMonth(r.p75, r.currency, r.period)), 1);
-  return (
-    <div>
-      <div className="flex flex-wrap gap-2">
-        <select value={cat} onChange={(e) => setCat(e.target.value)} className={`${inputCls} w-auto`} aria-label={d.allFields}>
-          <option value="">{d.allFields}</option>{CATEGORIES.map((c) => <option key={c} value={c}>{d.category[c]}</option>)}
-        </select>
-        <select value={city} onChange={(e) => setCity(e.target.value)} className={`${inputCls} w-auto`} aria-label={d.city}>
-          <option value="">{d.city}</option>{cities.map((c) => <option key={c}>{c}</option>)}
-        </select>
-      </div>
-      <div className="mt-4 card overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-surface-2 text-start text-xs text-muted">
-            <tr><th className="p-3 text-start">{d.role}</th><th className="p-3 text-start">{d.city}</th><th className="p-3 text-start">{d.median}</th><th className="hidden p-3 text-start sm:table-cell">{d.range}</th></tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => {
-              const lo = toAedMonth(r.p25, r.currency, r.period) / maxAed, hi = toAedMonth(r.p75, r.currency, r.period) / maxAed;
-              return (
-                <tr key={r.role + r.city} className="border-t border-line">
-                  <td className="p-3 font-medium">{r.role}</td>
-                  <td className="p-3 text-muted">{r.city}</td>
-                  <td className="p-3 font-semibold" dir="ltr">{fmt(r.p50, r.currency)}{r.period === "month" ? d.perMonth.replace("/", " /") : ""}</td>
-                  <td className="hidden p-3 sm:table-cell">
-                    <div className="relative h-2 w-40 rounded-full bg-surface-2" dir="ltr">
-                      <div className="absolute h-2 rounded-full bg-primary" style={{ left: `${lo * 100}%`, width: `${(hi - lo) * 100}%` }} />
-                    </div>
-                    <p className="mt-1 text-xs text-muted" dir="ltr">{fmt(r.p25, r.currency)} – {fmt(r.p75, r.currency)}</p>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 }
@@ -194,11 +139,11 @@ export function PostJobForm({ d }: { d: Dict }) {
       <L label={d.form.title}><input required className={inputCls} /></L>
       <L label={d.form.company}><input required className={inputCls} /></L>
       <L label={d.form.location}><input required placeholder="Dubai, UAE" className={inputCls} /></L>
-      <L label={d.allFields}><select className={inputCls}>{CATEGORIES.map((c) => <option key={c} value={c}>{d.category[c]}</option>)}</select></L>
+      <L label={d.allFields}><Select name="category" defaultValue="backend" placeholder={d.allFields} options={CATEGORIES.map((c) => ({ value: c, label: d.category[c] }))} /></L>
       <div className="grid grid-cols-3 gap-2 sm:col-span-2">
         <L label={d.form.salaryMin}><input type="number" dir="ltr" className={inputCls} /></L>
         <L label={d.form.salaryMax}><input type="number" dir="ltr" className={inputCls} /></L>
-        <L label={d.form.currency}><select className={inputCls}>{["AED", "SAR", "QAR", "KWD", "OMR", "BHD", "INR", "USD"].map((c) => <option key={c}>{c}</option>)}</select></L>
+        <L label={d.form.currency}><Select name="currency" defaultValue="AED" placeholder={d.form.currency} options={["AED", "SAR", "QAR", "KWD", "OMR", "BHD", "INR", "USD"].map((c) => ({ value: c, label: c }))} /></L>
       </div>
       <div className="sm:col-span-2"><L label={d.form.description}><textarea required rows={6} className={`${inputCls} h-auto py-2`} /></L></div>
       <L label={d.form.applyUrl}><input required dir="ltr" className={inputCls} /></L>

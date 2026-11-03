@@ -132,3 +132,52 @@ export const SALARY_BENCHMARKS: { role: string; category: Category; city: string
   { role: "QA Engineer", category: "qa", city: "Riyadh", currency: "SAR", p25: 11000, p50: 15000, p75: 20000, period: "month" },
   { role: "Product Manager", category: "product", city: "Dubai", currency: "AED", p25: 28000, p50: 38000, p75: 50000, period: "month" },
 ];
+
+// ---------- Salary trends (illustrative) ----------
+export const SALARY_UPDATED = "2026-11-03";
+export const SALARY_SAMPLE = 4812;
+export const TREND_MONTHS = ["Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov"];
+
+/** Year-over-year change of the median, in % — keyed by `${role}|${city}` */
+const YOY: Record<string, number> = {
+  "Backend Engineer|Dubai": 4.2, "Backend Engineer|Riyadh": 5.1, "Backend Engineer|Bengaluru": 7.5,
+  "Frontend Engineer|Dubai": 2.8, "Frontend Engineer|Bengaluru": 3.1, "DevOps Engineer|Dubai": 6.4,
+  "DevOps Engineer|Riyadh": 8.2, "Data Scientist|Dubai": 9.6, "Data Scientist|Bengaluru": 14.8,
+  "Cybersecurity Analyst|Riyadh": 11.3, "Cybersecurity Analyst|Doha": 6.9, "SAP Consultant|Dubai": 3.4,
+  "QA Engineer|Riyadh": -1.2, "Product Manager|Dubai": 4.0,
+};
+
+/** Deterministic 12-month series ending at the current median. */
+export function medianTrend(p50: number, yoy: number, seed = 0): number[] {
+  const wobble = [0.6, -0.4, 0.3, 0.8, -0.2, 0.5, -0.6, 0.2, 0.7, -0.3, 0.3, 0];
+  return wobble.map((w, i) => Math.round(p50 * (1 - ((yoy / 100) * (11 - i)) / 12 + (w * (1 + (seed % 3) * 0.4)) / 100)));
+}
+
+/** Fixed categorical colour per city (validated palette; colour follows the entity, not rank). */
+export const CITY_COLOR: Record<string, { light: string; dark: string }> = {
+  Dubai: { light: "#2a78d6", dark: "#3987e5" },
+  Riyadh: { light: "#eb6834", dark: "#d95926" },
+  Doha: { light: "#1baf7a", dark: "#199e70" },
+  Bengaluru: { light: "#eda100", dark: "#c98500" },
+};
+export const yoyOf = (role: string, city: string) => YOY[`${role}|${city}`] ?? 0;
+
+export const TECH_TRENDS: { tech: string; demand: number; premium: number; jobs: number; category: Category }[] = [
+  { tech: "LLM / GenAI", demand: 82, premium: 28, jobs: 3420, category: "data-ai" },
+  { tech: "Kubernetes", demand: 31, premium: 14, jobs: 5120, category: "devops" },
+  { tech: "Go", demand: 27, premium: 12, jobs: 2210, category: "backend" },
+  { tech: "Rust", demand: 24, premium: 15, jobs: 640, category: "backend" },
+  { tech: "Databricks", demand: 22, premium: 11, jobs: 1380, category: "data-ai" },
+  { tech: "SAP S/4HANA", demand: 18, premium: 19, jobs: 2950, category: "erp" },
+  { tech: "Zero Trust / NCA ECC", demand: 17, premium: 13, jobs: 1640, category: "security" },
+  { tech: "Flutter", demand: 9, premium: 2, jobs: 1890, category: "frontend" },
+  { tech: "React", demand: 4, premium: 3, jobs: 7850, category: "frontend" },
+  { tech: "Angular", demand: -8, premium: -2, jobs: 2430, category: "frontend" },
+  { tech: "Manual QA", demand: -15, premium: -12, jobs: 1210, category: "qa" },
+];
+
+export const MARKET_NOTES: { date: string; text: string }[] = [
+  { date: "2026-11-01", text: "AI/ML roles in Dubai now list salary 41% of the time — highest of any field." },
+  { date: "2026-10-24", text: "Riyadh DevOps medians up 8% YoY as new data-centre projects hire ahead of 2027." },
+  { date: "2026-10-15", text: "Bengaluru data scientists at 20+ LPA grew fastest; sub-10 LPA roles flat." },
+];
