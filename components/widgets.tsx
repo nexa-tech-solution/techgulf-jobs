@@ -10,7 +10,7 @@ import type { Job } from "@/lib/types";
 import { CATEGORIES } from "@/lib/format";
 import { inputCls } from "./ui";
 import { Select } from "./select";
-import { BellIcon, CheckIcon, UploadIcon } from "./icons";
+import { BellIcon, CheckIcon } from "./icons";
 
 /* ---------- Alerts (managed inside My jobs) ---------- */
 function AlertsManager({ d, lang, jobs }: { d: Dict; lang: Locale; jobs: Job[] }) {
@@ -150,39 +150,5 @@ export function PostJobForm({ d }: { d: Dict }) {
       <label className="flex min-h-11 items-center gap-3 self-end text-sm"><input type="checkbox" className="h-4 w-4 accent-[var(--primary)]" />{d.form.visaOffered}</label>
       <button className="h-12 rounded-lg bg-primary font-semibold text-on-primary sm:col-span-2">{d.form.submit}</button>
     </form>
-  );
-}
-
-/* ---------- CV match (UI preview, scores simulated) ---------- */
-export function CvMatch({ d, lang, jobs }: { d: Dict; lang: Locale; jobs: Job[] }) {
-  const [file, setFile] = useState<string | null>(null);
-  const mySkills = ["React", "TypeScript", "Node.js", "AWS", "PostgreSQL"];
-  const scored = jobs.map((j) => {
-    const have = j.tags.filter((t) => mySkills.includes(t));
-    return { j, score: Math.round(40 + (have.length / Math.max(j.tags.length, 1)) * 58), missing: j.tags.filter((t) => !mySkills.includes(t)) };
-  }).sort((a, b) => b.score - a.score).slice(0, 6);
-  return (
-    <div>
-      <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-line bg-surface p-10 text-center hover:border-primary">
-        <UploadIcon className="h-8 w-8 text-primary" />
-        <span className="font-semibold">{file ?? d.upload}</span>
-        <span className="text-sm text-muted">{d.dropHere}</span>
-        <input type="file" accept=".pdf,.doc,.docx" className="sr-only" onChange={(e) => setFile(e.target.files?.[0]?.name ?? null)} />
-      </label>
-      {file && (
-        <ul className="mt-6 space-y-2">
-          {scored.map(({ j, score, missing }) => (
-            <li key={j.id} className="flex items-center gap-4 card p-4">
-              <div className={`grid h-14 w-14 shrink-0 place-items-center rounded-full border-4 text-sm font-bold ${score >= 75 ? "border-success text-success" : score >= 55 ? "border-accent text-accent" : "border-line text-muted"}`} dir="ltr">{score}%</div>
-              <div className="min-w-0 flex-1">
-                <Link href={`/${lang}/jobs/${j.id}`} className="font-semibold hover:text-primary"><bdi>{j.title}</bdi></Link>
-                <p className="text-sm text-muted">{j.company} · {j.city ?? d.country.REMOTE}</p>
-                {missing.length > 0 && <p className="mt-1 text-xs"><span className="text-muted">{d.missingSkills}:</span> <span dir="ltr" className="font-mono text-warning">{missing.join(", ")}</span></p>}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
   );
 }

@@ -1,31 +1,19 @@
 "use client";
-import { useRouter } from "next/navigation";
-import { useTransition } from "react";
-import type { Dict, Locale } from "@/lib/i18n";
+import type { Dict } from "@/lib/i18n";
 import type { JobFilters } from "@/lib/jobs";
 import { CATEGORIES, COUNTRY_CODES } from "@/lib/format";
 import { Select } from "./select";
 
 type Counts = { country: Record<string, number>; category: Record<string, number> };
 
-export function useFilterNav(lang: Locale, f: JobFilters) {
-  const router = useRouter();
-  const [pending, start] = useTransition();
-  const go = (patch: Partial<JobFilters>) => {
-    const next = { ...f, ...patch };
-    const qs = new URLSearchParams(Object.entries(next).filter(([, v]) => v) as [string, string][]);
-    start(() => router.push(`/${lang}/jobs${qs.size ? `?${qs}` : ""}`, { scroll: false }));
-  };
-  return { go, pending };
-}
+export type Patch = Partial<JobFilters>;
 
-export function FilterBar({ d, f, lang, counts }: { d: Dict; f: JobFilters; lang: Locale; counts: Counts }) {
-  const { go, pending } = useFilterNav(lang, f);
+export function FilterBar({ d, f, counts, go }: { d: Dict; f: JobFilters; counts: Counts; go: (p: Patch) => void }) {
   const any = (label: string): { value: string; label: string } => ({ value: "", label });
   const toggles = [["visa", d.visa], ["salary", d.salaryDisclosed], ["direct", d.direct], ["nationals", d.nationals]] as const;
 
   return (
-    <div className={`transition-opacity ${pending ? "opacity-60" : ""}`} aria-busy={pending}>
+    <div>
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]">
         <Select variant="pill" placeholder={d.anywhere} value={f.country ?? ""} onChange={(v) => go({ country: v, city: "" })}
           options={[any(d.anywhere), ...COUNTRY_CODES.map((c) => ({ value: c, label: d.country[c], hint: String(counts.country[c] ?? 0) }))]} />
@@ -54,8 +42,7 @@ export function FilterBar({ d, f, lang, counts }: { d: Dict; f: JobFilters; lang
   );
 }
 
-export function SortSelect({ d, f, lang }: { d: Dict; f: JobFilters; lang: Locale }) {
-  const { go } = useFilterNav(lang, f);
+export function SortSelect({ d, f, go }: { d: Dict; f: JobFilters; go: (p: Patch) => void }) {
   return (
     <Select variant="pill" placeholder={d.sortRelevance} value={f.sort ?? ""} onChange={(v) => go({ sort: v })}
       options={[{ value: "", label: d.sortRelevance }, { value: "date", label: d.sortDate }, { value: "salary", label: d.sortSalary }]} className="[&>button]:border-line [&>button]:bg-surface [&>button]:text-ink" />

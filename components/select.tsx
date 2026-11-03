@@ -99,7 +99,7 @@ export function Select({ options, value, defaultValue = "", onChange, placeholde
         <ul
           ref={list} id={id} role="listbox" aria-label={placeholder} tabIndex={-1}
           style={pos}
-          className="z-50 max-h-72 overflow-auto rounded-xl border border-line bg-surface p-1 shadow-[0_12px_32px_-12px_rgb(15_23_42/0.25)]"
+          className="animate-pop z-50 max-h-72 overflow-auto rounded-xl border border-line bg-surface p-1 shadow-[0_12px_32px_-12px_rgb(15_23_42/0.25)]"
         >
           {options.map((o, i) => {
             const sel = o.value === current;
