@@ -2,11 +2,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { actions, filterKey, getStoreState, useStore } from "@/lib/store";
+import { actions, getStoreState, useStore } from "@/lib/store";
 import type { Dict, Locale } from "@/lib/i18n";
-import type { JobFilters } from "@/lib/jobs";
-import { describeFilters } from "@/lib/describe";
-import { BellIcon, CheckIcon, ExternalIcon } from "./icons";
+import { ExternalIcon } from "./icons";
 
 const nextParam = () => encodeURIComponent(location.pathname + location.search);
 
@@ -34,7 +32,6 @@ export function HeaderAccount({ d, lang }: { d: Dict; lang: Locale }) {
         <div className="px-3 py-2"><p className="text-sm font-semibold">{user.name}</p><p className="truncate text-xs text-muted">{user.email}</p></div>
         <Link href={`/${lang}/onboarding`} className="flex h-10 items-center rounded-lg px-3 text-sm hover:bg-surface-2">{d.onboard.editProfile}</Link>
         <Link href={`/${lang}/saved`} className="flex h-10 items-center rounded-lg px-3 text-sm hover:bg-surface-2">{d.nav.saved}</Link>
-        <Link href={`/${lang}/saved#alerts`} className="flex h-10 items-center rounded-lg px-3 text-sm hover:bg-surface-2">{d.account.myAlerts}</Link>
         <button onClick={signOutEverywhere} className="flex h-10 w-full items-center rounded-lg px-3 text-sm text-danger hover:bg-surface-2">{d.account.signOut}</button>
       </div>
     </details>
@@ -54,36 +51,6 @@ export function ApplyButton({ href, label, lang, className }: { href: string; la
       }}>
       {label} <ExternalIcon />
     </a>
-  );
-}
-
-/** One-click "save this search" — the whole alert sign-up flow. */
-export function SaveSearch({ d, lang, f, variant = "card" }: { d: Dict; lang: Locale; f: JobFilters; variant?: "card" | "button" }) {
-  const { user, alerts } = useStore();
-  const router = useRouter();
-  const key = filterKey(f as Record<string, string>);
-  const on = alerts.some((a) => a.key === key);
-  const click = () => {
-    if (!user) return router.push(`/${lang}/login?next=${nextParam()}`);
-    if (on) actions.removeAlertByKey(key);
-    else actions.saveSearch(f as Record<string, string>);
-  };
-  const btn = (
-    <button type="button" onClick={click} aria-pressed={on}
-      className={`inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition ${variant === "card" ? "w-full" : ""} ${on ? "border border-primary bg-primary/10 text-primary" : "bg-primary text-on-primary hover:opacity-90"}`}>
-      {on ? <CheckIcon /> : <BellIcon className="h-4 w-4" />}{on ? d.account.alertOn : d.account.saveSearch}
-    </button>
-  );
-  if (variant === "button") return btn;
-  return (
-    <div className="rounded-xl border border-line bg-surface p-5">
-      <p className="font-semibold">{d.account.saveTitle}</p>
-      <p className="mt-1 text-sm text-muted">{describeFilters(f, d)}</p>
-      <div className="mt-4">{btn}</div>
-      <p className="mt-3 text-xs text-muted">
-        {on && user ? <>{d.account.sentTo.replace("{email}", user.email)} · <Link href={`/${lang}/saved#alerts`} className="text-primary hover:underline">{d.account.manage}</Link></> : d.account.saveHint}
-      </p>
-    </div>
   );
 }
 

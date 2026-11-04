@@ -6,7 +6,6 @@ import type { Job } from "@/lib/types";
 import { filterJobs, type JobFilters } from "@/lib/jobs";
 import { FilterBar, SortSelect, type Patch } from "./filter-bar";
 import { JobCard } from "./job-card";
-import { SaveSearch } from "./account";
 import { SearchIcon, ShieldIcon } from "./icons";
 
 const clean = (f: JobFilters): JobFilters => Object.fromEntries(Object.entries(f).filter(([, v]) => v)) as JobFilters;
@@ -134,14 +133,13 @@ export function JobsBrowser({ d, lang, jobs, initial, counts, now }: {
                 <p className="mx-auto mt-1 max-w-sm text-sm text-muted">{d.noResultsHint}</p>
                 <div className="mt-5 flex justify-center gap-2">
                   <Link href={`/${lang}/jobs`} onClick={() => { setQ(""); setF({}); }} className="inline-flex h-10 items-center rounded-lg border border-line px-4 text-sm font-medium hover:border-ink/30">{d.clear}</Link>
-                  <SaveSearch d={d} lang={lang} f={f} variant="button" />
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        <aside className="space-y-4">
+        <aside className="jobs-aside space-y-4">
           <div className="flex gap-3 rounded-xl border border-line bg-surface p-5 text-sm text-muted">
             <ShieldIcon className="h-5 w-5 shrink-0 text-danger" /><p>{d.scamWarn}</p>
           </div>
@@ -149,8 +147,6 @@ export function JobsBrowser({ d, lang, jobs, initial, counts, now }: {
             <p className="font-semibold">{d.nav.salaries}</p>
             <p className="mt-1 text-sm text-muted">{d.salariesSub}</p>
           </Link>
-          {/* Last, so it can stay pinned without covering the cards above it */}
-          <div className="jobs-alert"><SaveSearch d={d} lang={lang} f={f} /></div>
         </aside>
       </div>
     </>

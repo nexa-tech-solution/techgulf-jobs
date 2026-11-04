@@ -76,7 +76,7 @@ summary::-webkit-details-marker { display: none; }
   .marquee-track { animation: none; }
   .marquee-copy[aria-hidden="true"] { display: none; }
 }
-/* Map and alert panels: flat in light theme, neon glow only in dark */
+/* Map panel: flat in light theme, neon glow only in dark */
 .neon-panel { background-color: var(--surface-2); }
 :root[data-theme="dark"] .tech-glow { background-image: radial-gradient(ellipse 70% 80% at 50% 0%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 75%); }
 :root[data-theme="dark"] .neon-card { border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); box-shadow: 0 0 36px color-mix(in srgb, var(--primary) 14%, transparent); }
@@ -94,7 +94,7 @@ summary::-webkit-details-marker { display: none; }
 }
 @keyframes map-quake { 0% { transform: scale(.2); opacity: .55; } 100% { transform: scale(1); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .map-quake { display: none; } }
-/* Jobs alert card: stays just below the sticky header and filter bar */
+/* Jobs sidebar: stays just below the sticky header and filter bar */
 @media (min-width: 1024px) {
-  .jobs-alert { position: sticky; top: calc(4rem + var(--filter-bar, 15rem) + 1.5rem); }
+  .jobs-aside { position: sticky; top: calc(4rem + var(--filter-bar, 15rem) + 1.5rem); align-self: start; }
 }

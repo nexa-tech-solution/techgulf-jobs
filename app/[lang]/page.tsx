@@ -153,15 +153,7 @@ export default async function Home(props: PageProps<"/[lang]">) {
         <UserMap d={d} lang={lang} />
       </Section>
 
-      <section className="mx-auto max-w-6xl px-4 py-14">
-        <div className="flex flex-col items-start gap-5 neon-card neon-panel rounded-xl border border-line p-6 md:flex-row md:items-center md:p-10">
-          <div className="flex-1">
-            <h2 className="text-xl font-semibold tracking-tight md:text-2xl">{d.alertCta.title}</h2>
-            <p className="mt-2 text-muted">{d.alertCta.sub}</p>
-          </div>
-          <Link href={`/${lang}/jobs`} className="inline-flex h-11 items-center rounded-lg bg-primary px-6 font-semibold text-on-primary">{d.alertCta.button}</Link>
-        </div>
-      </section>
+      <div className="h-14" aria-hidden />
     </>
   );
 }

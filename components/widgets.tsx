@@ -1,95 +1,26 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { actions, useStore, type Alert, type Channel } from "@/lib/store";
-import { describeFilters } from "@/lib/describe";
-import { filterJobs } from "@/lib/jobs";
+import { useState } from "react";
+import { actions, useStore } from "@/lib/store";
 import type { Dict, Locale } from "@/lib/i18n";
 import type { Job } from "@/lib/types";
 import { CATEGORIES } from "@/lib/format";
 import { inputCls } from "./ui";
 import { Select } from "./select";
-import { BellIcon, CheckIcon } from "./icons";
-
-/* ---------- Alerts (managed inside My jobs) ---------- */
-function AlertsManager({ d, lang, jobs, now }: { d: Dict; lang: Locale; jobs: Job[]; now: string }) {
-  const { alerts, user } = useStore();
-  if (alerts.length === 0)
-    return (
-      <div className="mt-6 rounded-xl border border-dashed border-line bg-surface p-8 text-center">
-        <BellIcon className="mx-auto h-8 w-8 text-muted" />
-        <p className="mt-3 font-semibold">{d.account.noAlerts}</p>
-        <p className="mx-auto mt-1 max-w-sm text-sm text-muted">{d.account.noAlertsHint}</p>
-        <Link href={`/${lang}/jobs`} className="mt-4 inline-flex h-11 items-center rounded-lg bg-primary px-5 font-semibold text-on-primary">{d.nav.jobs}</Link>
-      </div>
-    );
-  const channels: Channel[] = ["email", "whatsapp", "telegram"];
-  return (
-    <ul className="mt-4 space-y-3">
-      {alerts.map((a) => {
-        const n = filterJobs(jobs, a.filters, new Date(now)).length;
-        const qs = new URLSearchParams(a.filters).toString();
-        return (
-          <li key={a.id} className="rounded-xl border border-line bg-surface p-4 md:p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="font-semibold">{describeFilters(a.filters, d)}</p>
-                <Link href={`/${lang}/jobs${qs ? `?${qs}` : ""}`} className="text-sm text-primary hover:underline">{d.account.matching.replace("{n}", String(n))}</Link>
-              </div>
-              <button onClick={() => actions.removeAlert(a.id)} className="h-9 rounded-lg px-3 text-sm text-muted hover:text-danger">{d.delete}</button>
-            </div>
-            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4">
-              <span className="me-1 text-xs text-muted">{d.account.sendTo}</span>
-              {channels.map((c) => {
-                const on = a.channels.includes(c);
-                return (
-                  <button key={c} type="button" aria-pressed={on}
-                    onClick={() => {
-                      const next = on ? a.channels.filter((x) => x !== c) : [...a.channels, c];
-                      if (next.length) actions.updateAlert(a.id, { channels: next });
-                    }}
-                    className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition ${on ? "border-primary bg-primary/10 text-primary" : "border-dashed border-line text-muted hover:text-ink"}`}>
-                    {on ? "✓" : "+"} {d[c]}{c === "email" && on && user && <span className="font-normal text-muted" dir="ltr">({user.email})</span>}
-                  </button>
-                );
-              })}
-              <Select variant="pill" placeholder={d.frequency} value={a.frequency} onChange={(v) => actions.updateAlert(a.id, { frequency: v as Alert["frequency"] })}
-                className="ms-auto [&>button]:h-8 [&>button]:border-line [&>button]:bg-surface [&>button]:text-[13px] [&>button]:text-ink"
-                options={[{ value: "instant", label: d.instant }, { value: "daily", label: d.daily }, { value: "weekly", label: d.weekly }]} />
-            </div>
-          </li>
-        );
-      })}
-      <li className="text-xs text-muted">{d.account.whatsappNote}</li>
-    </ul>
-  );
-}
+import { CheckIcon } from "./icons";
 
 const L = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <label className="block"><span className="mb-1.5 block text-sm font-medium">{label}</span>{children}</label>
 );
 
-/* ---------- Saved jobs + alerts ---------- */
+/* ---------- Saved jobs ---------- */
 
-export function MyJobs({ d, lang, jobs, now }: { d: Dict; lang: Locale; jobs: Job[]; now: string }) {
+export function MyJobs({ d, lang, jobs }: { d: Dict; lang: Locale; jobs: Job[] }) {
   const store = useStore();
-  const [tab, setTab] = useState<"saved" | "alerts">("saved");
-  useEffect(() => {
-    const sync = () => { if (location.hash === "#alerts") setTab("alerts"); };
-    sync();
-    addEventListener("hashchange", sync);
-    return () => removeEventListener("hashchange", sync);
-  }, []);
   const mine = jobs.filter((j) => store.jobs[j.id]);
   return (
     <div>
-      <div className="flex gap-1 border-b border-line" role="tablist">
-        {([["saved", d.savedTab, mine.length], ["alerts", d.account.alertsTab, store.alerts.length]] as const).map(([k, label, n]) => (
-          <button key={k} role="tab" aria-selected={tab === k} onClick={() => { setTab(k); history.replaceState(null, "", k === "alerts" ? "#alerts" : location.pathname); }}
-            className={`-mb-px h-11 border-b-2 px-4 text-sm font-medium ${tab === k ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"}`}>{label} <span className="text-muted">{n}</span></button>
-        ))}
-      </div>
-      {tab === "alerts" ? <AlertsManager d={d} lang={lang} jobs={jobs} now={now} /> : mine.length === 0 ? (
+      {mine.length === 0 ? (
         <div className="mt-6 rounded-xl border border-dashed border-line bg-surface p-8 text-center">
           <p className="text-muted">{d.emptySaved}</p>
           <Link href={`/${lang}/jobs`} className="mt-4 inline-flex h-11 items-center rounded-lg bg-primary px-5 font-semibold text-on-primary">{d.nav.jobs}</Link>
