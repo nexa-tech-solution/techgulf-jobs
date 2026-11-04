@@ -15,7 +15,7 @@ export interface Profile {
   // Added after launch of the profile, so older saved profiles may not have them
   summary?: string; linkedin?: string; portfolio?: string; work?: WorkEntry[]; education?: EducationEntry[];
   languages?: LanguageEntry[]; certifications?: CertificationEntry[];
-  /** Opt-in for the daily new-jobs email. Off unless the person turns it on. */
+  /** The daily new-jobs email is on unless this is false. */
   emailDigest?: boolean;
 }
 

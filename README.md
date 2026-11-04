@@ -36,6 +36,85 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 
+## Chạy hằng ngày: sync job và gửi email
+
+Mỗi ngày chỉ cần chạy một lệnh ở thư mục gốc của dự án:
+
+```bash
+npm run daily
+```
+
+Lệnh này làm lần lượt hai việc:
+
+1. **Sync job:** lấy job mới, xóa job đã hết hạn hoặc đã gỡ khỏi trang của công ty.
+2. **Gửi email:** gửi job mới cho mọi người dùng đã có hồ sơ, trừ người đã tắt trong trang hồ sơ.
+
+### Cài đặt một lần
+
+Thêm các biến sau vào file `.env`. File này không được commit, nên đừng đưa khóa vào chỗ khác.
+
+```bash
+GOOGLE_APPLICATION_CREDENTIALS=/duong-dan/toi/service-account.json
+GMAIL_USER=techgulfjobs@gmail.com
+GMAIL_APP_PASSWORD=xxxxxxxxxxxxxxxx
+```
+
+- `GOOGLE_APPLICATION_CREDENTIALS`: file service account của Firebase, dùng để đọc và ghi Firestore.
+- `GMAIL_USER`: Gmail dùng để gửi.
+- `GMAIL_APP_PASSWORD`: mật khẩu ứng dụng, không phải mật khẩu Gmail. Bật xác minh 2 bước cho tài khoản, rồi tạo tại [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords).
+
+Gmail cá nhân gửi được khoảng 500 người nhận mỗi ngày. Vượt mức này Google có thể tạm khóa việc gửi.
+
+### Lần chạy đầu tiên
+
+```bash
+npm run daily -- --dry-run   # xem trước, không ghi và không gửi gì
+npm run daily                # chạy thật
+```
+
+Lần chạy thật đầu tiên **không gửi email**: nó chỉ đánh dấu các job đang có là đã biết, để không ai nhận cả danh sách job cũ. Từ lần sau mới gửi.
+
+### Ai nhận được gì
+
+- Mọi người dùng đã có hồ sơ đều nhận email. Ai không muốn nhận có thể tắt "Email me new matching jobs" trong hồ sơ.
+- Mỗi người nhận tối đa 1 email mỗi ngày, mỗi email tối đa 5 job.
+- Job phải đúng quốc gia họ chọn, có ít nhất 1 kỹ năng của họ, và có cấp bậc hợp với số năm kinh nghiệm.
+- Không có job phù hợp thì không gửi.
+
+### Đọc kết quả
+
+Cuối lần chạy sẽ có một dòng như:
+
+```text
+Sync: OK. Email: OK.
+```
+
+| Bạn thấy | Ý nghĩa | Cần làm |
+| --- | --- | --- |
+| `FAILED, existing jobs left untouched` | Một nguồn job bị lỗi, job cũ của nguồn đó được giữ nguyên | Thường là lỗi tạm thời, để mai chạy lại. Nếu lặp lại nhiều ngày thì kiểm tra nguồn đó |
+| `First run: ... No emails on this run.` | Lần chạy đầu | Bình thường |
+| `0 new jobs` | Hôm nay không có job mới | Bình thường, không có mail |
+| `Sent 0, ... of 0 users` | Chưa có người dùng nào có hồ sơ | Tạo hồ sơ để thử |
+| `not sent. ...` | Gửi cho người đó thất bại | Kiểm tra mật khẩu ứng dụng và giới hạn gửi của Gmail, rồi chạy lại |
+| `Add GMAIL_USER and GMAIL_APP_PASSWORD to .env` | Thiếu cấu hình | Thêm vào `.env` |
+
+Nên chạy lại ngay trong ngày nếu gửi lỗi: người đã nhận hôm đó sẽ được bỏ qua. Nếu để sang hôm sau, họ có thể nhận lại các job đó.
+
+### Các lệnh khác
+
+```bash
+npm run sync:jobs                                  # chỉ sync job
+npm run digest                                     # chỉ gửi email
+npm run digest -- --dry-run                        # xem ai sẽ nhận gì, không gửi
+npm run digest -- --preview=/tmp/digest.html       # xem mẫu email, không cần khóa
+```
+
+### Sửa nhanh
+
+- Mẫu email: `scripts/email-template.mjs`
+- Số job mỗi email và quy tắc khớp cấp bậc: đầu file `scripts/send-digest.mjs`
+- Danh sách công ty: `SOURCES` trong `scripts/sync-jobs.mjs`
+
 ## Update jobs daily
 
 Run this from the project root:

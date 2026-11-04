@@ -1,10 +1,10 @@
-// Emails each opted-in user the new jobs that match them.
+// Emails each user the new jobs that match them.
 //   npm run digest -- --preview=/path/file.html   render a sample, no credentials needed, sends nothing
 //   npm run digest -- --dry-run                   list who would get what, sends and writes nothing
 //   npm run digest                                send
-// Sending needs RESEND_API_KEY and MAIL_FROM in .env, plus Firebase credentials as for sync:jobs.
+// Sending needs GMAIL_USER and GMAIL_APP_PASSWORD in .env, plus Firebase credentials as for sync:jobs.
 //
-// Only users with profile.emailDigest === true are emailed. A job is "new" until it has notifiedAt.
+// Every user with a profile is emailed, unless they turned it off (profile.emailDigest === false). A job is "new" until it has notifiedAt.
 // The first run only marks existing jobs, so nobody is sent the whole catalogue.
 import { writeFileSync } from "node:fs";
 import { renderDigest } from "./email-template.mjs";
@@ -18,6 +18,7 @@ const COUNTRY_NAME = { AE: "UAE", SA: "Saudi Arabia", QA: "Qatar", KW: "Kuwait",
 const args = process.argv.slice(2);
 const dryRun = args.includes("--dry-run");
 const previewPath = args.find((a) => a.startsWith("--preview="))?.split("=")[1];
+let mailer;
 const today = new Date().toISOString().slice(0, 10);
 
 /** Jobs in the user's countries, at a level fitting their experience, that name at least one of their skills. Best match first. */
@@ -32,14 +33,11 @@ export function jobsForUser(jobs, profile) {
     .sort((a, b) => b.matched.length - a.matched.length || b.postedAt.localeCompare(a.postedAt));
 }
 
+// A personal Gmail account allows about 500 recipients a day.
 async function send({ to, subject, html, text, settingsUrl }) {
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: process.env.MAIL_FROM, to, subject, html, text, headers: { "List-Unsubscribe": `<${settingsUrl}>` } }),
-    signal: AbortSignal.timeout(30000),
-  });
-  if (!res.ok) throw new Error(`Resend HTTP ${res.status}`);
+  const { createTransport } = await import("nodemailer");
+  mailer ??= createTransport({ service: "gmail", auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD } });
+  await mailer.sendMail({ from: `TechGulf Jobs <${process.env.GMAIL_USER}>`, to, subject, html, text, headers: { "List-Unsubscribe": `<${settingsUrl}>` } });
 }
 
 if (previewPath) {
@@ -53,8 +51,8 @@ if (previewPath) {
   process.exit(0);
 }
 
-if (!dryRun && (!process.env.RESEND_API_KEY || !process.env.MAIL_FROM)) {
-  throw new Error("Add RESEND_API_KEY and MAIL_FROM to .env, or use --dry-run.");
+if (!dryRun && (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD)) {
+  throw new Error("Add GMAIL_USER and GMAIL_APP_PASSWORD to .env, or use --dry-run.");
 }
 
 const { applicationDefault, initializeApp } = await import("firebase-admin/app");
@@ -85,13 +83,14 @@ const newJobs = pending.map((d) => ({ ...d.data(), id: d.id }));
 console.log(`${newJobs.length} new jobs`);
 if (!newJobs.length) process.exit(0);
 
-const userSnap = await db.collection("users").where("profile.emailDigest", "==", true).get();
+const userSnap = await db.collection("users").get();
+const recipients = userSnap.docs.filter((d) => d.get("profile") && d.get("profile.emailDigest") !== false);
 // Records who was emailed today, so running twice in a day cannot send twice.
 const runRef = db.collection("digestRuns").doc(today);
 const alreadySent = new Set((await runRef.get()).data()?.sent ?? []);
 
 let sent = 0, skipped = 0, failed = 0;
-for (const user of userSnap.docs) {
+for (const user of recipients) {
   const { email, profile } = user.data();
   const matches = jobsForUser(newJobs, profile);
   if (!email || !matches.length || alreadySent.has(user.id)) { skipped++; continue; }
@@ -107,7 +106,7 @@ for (const user of userSnap.docs) {
   }
 }
 
-console.log(`${dryRun ? "Would send" : "Sent"} ${sent}, skipped ${skipped}, failed ${failed}, of ${userSnap.size} opted-in users`);
+console.log(`${dryRun ? "Would send" : "Sent"} ${sent}, skipped ${skipped}, failed ${failed}, of ${recipients.length} users`);
 // After a failure jobs stay new, so a rerun retries; people already emailed today are skipped.
 if (failed) process.exitCode = 1;
 else if (!dryRun) await markNotified(pending);

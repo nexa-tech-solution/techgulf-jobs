@@ -68,6 +68,62 @@ const SOURCES = [
   { ats: "lever", board: "crypto", slug: "crypto-com", domain: "crypto.com", name: "Crypto.com", color: "#1e3a8a", hq: "Singapore", industry: "Crypto exchange", about: "Cryptocurrency exchange and payments app." },
   { ats: "greenhouse", board: "jfrog", slug: "jfrog", domain: "jfrog.com", name: "JFrog", color: "#15803d", hq: "Sunnyvale, USA", industry: "Developer tools", about: "Software supply chain and artifact management platform." },
   { ats: "ashby", board: "elevenlabs", slug: "elevenlabs", domain: "elevenlabs.io", name: "ElevenLabs", color: "#0f172a", hq: "New York, USA", industry: "Data and AI", about: "AI voice generation and audio tools." },
+  { ats: "smartrecruiters", board: "DeliveryHero", slug: "delivery-hero", domain: "deliveryhero.com", name: "Delivery Hero", color: "#dc2626", hq: "Berlin, Germany", industry: "Food delivery", about: "Food delivery group behind Talabat and HungerStation in the Gulf." },
+  { ats: "recruitee", board: "unifonic", slug: "unifonic", domain: "unifonic.com", name: "Unifonic", color: "#4f46e5", hq: "Riyadh, Saudi Arabia", industry: "Communications APIs", about: "Customer messaging and engagement platform for the Middle East." },
+  { ats: "greenhouse", board: "glance", slug: "glance", domain: "glance.com", name: "Glance", color: "#7c3aed", hq: "Bengaluru, India", industry: "Consumer technology", about: "AI-led content and commerce platform for smartphone lock screens." },
+  { ats: "greenhouse", board: "observeai", slug: "observe-ai", domain: "observe.ai", name: "Observe.AI", color: "#2563eb", hq: "San Francisco, USA", industry: "Data and AI", about: "AI platform for contact centre conversations." },
+  { ats: "ashby", board: "gainsight", slug: "gainsight", domain: "gainsight.com", name: "Gainsight", color: "#ea580c", hq: "San Francisco, USA", industry: "SaaS", about: "Customer success and retention software." },
+  { ats: "workday", board: "adobe:wd5:external_experienced", slug: "adobe", domain: "adobe.com", name: "Adobe", color: "#dc2626", hq: "San Jose, USA", industry: "Software", about: "Creative, document and marketing software." },
+  { ats: "workday", board: "aveva:wd3:AVEVA_careers", slug: "aveva", domain: "aveva.com", name: "AVEVA", color: "#0369a1", hq: "Cambridge, UK", industry: "Industrial software", about: "Engineering and operations software for industry." },
+  { ats: "workday", board: "boeing:wd1:EXTERNAL_CAREERS", slug: "boeing", domain: "boeing.com", name: "Boeing", color: "#1d4ed8", hq: "Arlington, USA", industry: "Aerospace", about: "Aerospace manufacturer with engineering centres in India." },
+  { ats: "workday", board: "broadcom:wd1:External_Career", slug: "broadcom", domain: "broadcom.com", name: "Broadcom", color: "#b91c1c", hq: "Palo Alto, USA", industry: "Semiconductors", about: "Semiconductors and infrastructure software." },
+  { ats: "workday", board: "citi:wd5:2", slug: "citi", domain: "citi.com", name: "Citi", color: "#1d4ed8", hq: "New York, USA", industry: "Banking", about: "Global bank with large technology centres in India." },
+  { ats: "workday", board: "crowdstrike:wd5:crowdstrikecareers", slug: "crowdstrike", domain: "crowdstrike.com", name: "CrowdStrike", color: "#dc2626", hq: "Austin, USA", industry: "Cybersecurity", about: "Cloud platform for endpoint and identity security." },
+  { ats: "workday", board: "db:wd3:DBWebsite", slug: "deutsche-bank", domain: "db.com", name: "Deutsche Bank", color: "#1e3a8a", hq: "Frankfurt, Germany", industry: "Banking", about: "Global bank with technology centres in India." },
+  { ats: "workday", board: "genesys:wd1:Genesys", slug: "genesys", domain: "genesys.com", name: "Genesys", color: "#ea580c", hq: "Menlo Park, USA", industry: "SaaS", about: "Cloud contact centre software." },
+  { ats: "workday", board: "hp:wd5:ExternalCareerSite", slug: "hp", domain: "hp.com", name: "HP", color: "#0284c7", hq: "Palo Alto, USA", industry: "Hardware", about: "Personal computers, printers and related services." },
+  { ats: "workday", board: "hpe:wd5:Jobsathpe", slug: "hpe", domain: "hpe.com", name: "Hewlett Packard Enterprise", color: "#15803d", hq: "Houston, USA", industry: "Enterprise technology", about: "Servers, networking and hybrid cloud." },
+  { ats: "workday", board: "intel:wd1:External", slug: "intel", domain: "intel.com", name: "Intel", color: "#0369a1", hq: "Santa Clara, USA", industry: "Semiconductors", about: "Processor and semiconductor manufacturer." },
+  { ats: "workday", board: "kla:wd1:Search", slug: "kla", domain: "kla.com", name: "KLA", color: "#1d4ed8", hq: "Milpitas, USA", industry: "Semiconductors", about: "Inspection and process control systems for chipmaking." },
+  { ats: "workday", board: "lowes:wd5:LWS_External_CS", slug: "lowes", domain: "lowes.com", name: "Lowe's", color: "#1e3a8a", hq: "Mooresville, USA", industry: "Retail technology", about: "Home improvement retailer with a technology centre in Bengaluru." },
+  { ats: "workday", board: "mastercard:wd1:CorporateCareers", slug: "mastercard", domain: "mastercard.com", name: "Mastercard", color: "#ea580c", hq: "Purchase, USA", industry: "Fintech / Payments", about: "Global payments network and technology company." },
+  { ats: "workday", board: "micron:wd1:External", slug: "micron", domain: "micron.com", name: "Micron", color: "#1d4ed8", hq: "Boise, USA", industry: "Semiconductors", about: "Memory and storage chip manufacturer." },
+  { ats: "workday", board: "motorolasolutions:wd5:Careers", slug: "motorola-solutions", domain: "motorolasolutions.com", name: "Motorola Solutions", color: "#0f172a", hq: "Chicago, USA", industry: "Communications technology", about: "Critical communications and public safety technology." },
+  { ats: "workday", board: "nvidia:wd5:NVIDIAExternalCareerSite", slug: "nvidia", domain: "nvidia.com", name: "NVIDIA", color: "#65a30d", hq: "Santa Clara, USA", industry: "Semiconductors", about: "GPUs and computing platforms for AI and graphics." },
+  { ats: "workday", board: "paypal:wd1:jobs", slug: "paypal", domain: "paypal.com", name: "PayPal", color: "#1d4ed8", hq: "San Jose, USA", industry: "Fintech / Payments", about: "Online payments and digital wallets." },
+  { ats: "workday", board: "philips:wd3:jobs-and-careers", slug: "philips", domain: "philips.com", name: "Philips", color: "#0369a1", hq: "Amsterdam, Netherlands", industry: "Health technology", about: "Medical devices and health technology." },
+  { ats: "workday", board: "pwc:wd3:Global_Experienced_Careers", slug: "pwc", domain: "pwc.com", name: "PwC", color: "#ea580c", hq: "London, UK", industry: "Technology consulting", about: "Professional services with technology and SAP practices." },
+  { ats: "workday", board: "salesforce:wd12:External_Career_Site", slug: "salesforce", domain: "salesforce.com", name: "Salesforce", color: "#0284c7", hq: "San Francisco, USA", industry: "SaaS", about: "Customer relationship management software." },
+  { ats: "workday", board: "target:wd5:targetcareers", slug: "target", domain: "target.com", name: "Target", color: "#dc2626", hq: "Minneapolis, USA", industry: "Retail technology", about: "US retailer with a technology centre in Bengaluru." },
+  { ats: "workday", board: "unilever:wd3:Unilever_Experienced_Professionals", slug: "unilever", domain: "unilever.com", name: "Unilever", color: "#1d4ed8", hq: "London, UK", industry: "Consumer goods", about: "Consumer goods company with data and digital teams in India." },
+  { ats: "workday", board: "wf:wd1:WellsFargoJobs", slug: "wells-fargo", domain: "wellsfargo.com", name: "Wells Fargo", color: "#b91c1c", hq: "San Francisco, USA", industry: "Banking", about: "US bank with technology centres in India." },
+  { ats: "workday", board: "workday:wd5:Workday", slug: "workday", domain: "workday.com", name: "Workday", color: "#ea580c", hq: "Pleasanton, USA", industry: "SaaS", about: "Cloud software for finance and human resources." },
+  { ats: "greenhouse", board: "celonis", slug: "celonis", domain: "celonis.com", name: "Celonis", color: "#15803d", hq: "Munich, Germany", industry: "Data and AI", about: "Process mining and process intelligence software." },
+  { ats: "ashby", board: "uipath", slug: "uipath", domain: "uipath.com", name: "UiPath", color: "#ea580c", hq: "New York, USA", industry: "SaaS", about: "Automation platform for business processes." },
+  { ats: "ashby", board: "tekion", slug: "tekion", domain: "tekion.com", name: "Tekion", color: "#1d4ed8", hq: "Pleasanton, USA", industry: "SaaS", about: "Cloud platform for automotive retail." },
+  { ats: "greenhouse", board: "razorpaysoftwareprivatelimited", slug: "razorpay", domain: "razorpay.com", name: "Razorpay", color: "#1d4ed8", hq: "Bengaluru, India", industry: "Fintech / Payments", about: "Payments and banking platform for businesses in India." },
+  { ats: "smartrecruiters", board: "BoschGroup", slug: "bosch", domain: "bosch.com", name: "Bosch", color: "#dc2626", hq: "Gerlingen, Germany", industry: "Engineering and technology", about: "Engineering group with large software centres in India." },
+  { ats: "smartrecruiters", board: "Experian", slug: "experian", domain: "experian.com", name: "Experian", color: "#7c3aed", hq: "Dublin, Ireland", industry: "Data and analytics", about: "Credit data and analytics company." },
+  { ats: "smartrecruiters", board: "WesternDigital", slug: "western-digital", domain: "westerndigital.com", name: "Western Digital", color: "#1d4ed8", hq: "San Jose, USA", industry: "Data storage", about: "Hard drives and data storage products." },
+  { ats: "smartrecruiters", board: "NielsenIQ", slug: "nielseniq", domain: "nielseniq.com", name: "NielsenIQ", color: "#0369a1", hq: "Chicago, USA", industry: "Data and analytics", about: "Consumer and retail market data." },
+  { ats: "workday", board: "sprinklr:wd1:careers", slug: "sprinklr", domain: "sprinklr.com", name: "Sprinklr", color: "#0284c7", hq: "New York, USA", industry: "SaaS", about: "Customer experience management software." },
+  { ats: "workday", board: "equinix:wd1:External", slug: "equinix", domain: "equinix.com", name: "Equinix", color: "#dc2626", hq: "Redwood City, USA", industry: "Data centres", about: "Global data centre and interconnection company." },
+  { ats: "workday", board: "lseg:wd3:Careers", slug: "lseg", domain: "lseg.com", name: "LSEG", color: "#0f172a", hq: "London, UK", industry: "Financial data", about: "Financial markets data and infrastructure." },
+  { ats: "workday", board: "fiserv:wd5:EXT", slug: "fiserv", domain: "fiserv.com", name: "Fiserv", color: "#ea580c", hq: "Milwaukee, USA", industry: "Fintech / Payments", about: "Payments and financial services technology." },
+  { ats: "workday", board: "statestreet:wd1:Global", slug: "state-street", domain: "statestreet.com", name: "State Street", color: "#1e3a8a", hq: "Boston, USA", industry: "Banking", about: "Asset servicing and financial services." },
+  { ats: "workday", board: "shell:wd3:ShellCareers", slug: "shell", domain: "shell.com", name: "Shell", color: "#ca8a04", hq: "London, UK", industry: "Energy", about: "Energy company with digital and data teams in India." },
+  { ats: "workday", board: "marvell:wd1:MarvellCareers", slug: "marvell", domain: "marvell.com", name: "Marvell", color: "#dc2626", hq: "Santa Clara, USA", industry: "Semiconductors", about: "Chips for data infrastructure." },
+  { ats: "workday", board: "ciena:wd5:Careers", slug: "ciena", domain: "ciena.com", name: "Ciena", color: "#0369a1", hq: "Hanover, USA", industry: "Networking", about: "Optical networking systems and software." },
+  { ats: "workday", board: "nxp:wd3:careers", slug: "nxp", domain: "nxp.com", name: "NXP", color: "#ca8a04", hq: "Eindhoven, Netherlands", industry: "Semiconductors", about: "Chips for cars, industry and connected devices." },
+  { ats: "workday", board: "athenahealth:wd1:External", slug: "athenahealth", domain: "athenahealth.com", name: "athenahealth", color: "#7c3aed", hq: "Boston, USA", industry: "Health technology", about: "Cloud software for healthcare providers." },
+  { ats: "workday", board: "trimble:wd1:TrimbleCareers", slug: "trimble", domain: "trimble.com", name: "Trimble", color: "#1d4ed8", hq: "Westminster, USA", industry: "Industrial software", about: "Positioning and software for construction and transport." },
+  { ats: "workday", board: "thomsonreuters:wd5:External_Career_Site", slug: "thomson-reuters", domain: "thomsonreuters.com", name: "Thomson Reuters", color: "#ea580c", hq: "Toronto, Canada", industry: "Information services", about: "Software and information for legal, tax and news." },
+  { ats: "workday", board: "vanguard:wd5:vanguard_external", slug: "vanguard", domain: "vanguard.com", name: "Vanguard", color: "#b91c1c", hq: "Malvern, USA", industry: "Financial services", about: "Investment management company with a technology centre in India." },
+  { ats: "workday", board: "capitalone:wd12:Capital_One", slug: "capital-one", domain: "capitalone.com", name: "Capital One", color: "#1e3a8a", hq: "McLean, USA", industry: "Banking", about: "US bank with technology teams in India." },
+  { ats: "workday", board: "kone:wd3:Careers", slug: "kone", domain: "kone.com", name: "KONE", color: "#1d4ed8", hq: "Espoo, Finland", industry: "Engineering and technology", about: "Elevators, escalators and building technology." },
+  { ats: "workday", board: "aptiv:wd5:APTIV_CAREERS", slug: "aptiv", domain: "aptiv.com", name: "Aptiv", color: "#ea580c", hq: "Schaffhausen, Switzerland", industry: "Automotive technology", about: "Software and electronics for vehicles." },
+  { ats: "workday", board: "nasdaq:wd1:Global_External_Site", slug: "nasdaq", domain: "nasdaq.com", name: "Nasdaq", color: "#0284c7", hq: "New York, USA", industry: "Financial technology", about: "Stock exchange operator and market technology." },
+  { ats: "workday", board: "blackrock:wd1:BlackRock_Professional", slug: "blackrock", domain: "blackrock.com", name: "BlackRock", color: "#0f172a", hq: "New York, USA", industry: "Financial services", about: "Asset manager behind the Aladdin technology platform." },
 ];
 
 // Older postings are usually stale even if still listed. Matches validThrough in the job page's JSON-LD.
@@ -110,7 +166,7 @@ const CATEGORIES = [
   ["backend", /\b(back[- ]?end|full[- ]?stack|software (engineer|developer)|sde|engineering manager|java|golang|node\.?js|\.net|python developer)\b/i],
 ];
 
-const NON_TECH = /\b(sales|account executive|account manager|marketing|recruit\w*|talent|legal|finance|account(ant|ing)|customer success|business development|hr|human resources|martech|regional security)\b/i;
+const NON_TECH = /\b(sales|pre-?sales|market research|account executive|account manager|marketing|recruit\w*|talent|legal|finance|account(ant|ing)|customer success|business development|hr|human resources|martech|regional security)\b/i;
 
 const TAGS = ["React", "Next.js", "TypeScript", "JavaScript", "Node.js", "Python", "Java", "Kotlin", "Swift", "Go", "Rust", ".NET", "C#", "Flutter", "Android", "iOS", "AWS", "Azure", "GCP", "Kubernetes", "Docker", "Terraform", "Kafka", "PostgreSQL", "MySQL", "MongoDB", "Redis", "Spark", "Databricks", "PyTorch", "TensorFlow", "LLM", "SQL", "SAP", "Selenium", "Cypress"];
 // "Go" must not match prose such as "Go-to-market" or "Go to".
@@ -143,7 +199,11 @@ function isOpenRemote(location, remote) {
 function placeOf(location, remote) {
   for (const [country, re, cities] of PLACES) {
     if (re.test(location)) {
-      const city = cities.find((c) => new RegExp(`\\b${c}\\b`, "i").test(location));
+      // A posting can list several cities, so take the one named first rather than the first in our list.
+      const city = cities
+        .map((c) => [c, location.search(new RegExp(`\\b${c}\\b`, "i"))])
+        .filter(([, at]) => at >= 0)
+        .sort((a, b) => a[1] - b[1])[0]?.[0];
       return { country, city: CITY_ALIAS[city] ?? city };
     }
   }

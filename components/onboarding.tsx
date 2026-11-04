@@ -29,7 +29,7 @@ function ProfileForm({ d, lang, skills }: { d: Dict; lang: Locale; skills: strin
     location: profile?.location ?? "IN", targets: profile?.targets ?? ["AE"], needVisa: profile?.needVisa ?? true,
     whatsapp: profile?.whatsapp ?? "", skills: profile?.skills ?? [],
     summary: profile?.summary ?? "", linkedin: profile?.linkedin ?? "", portfolio: profile?.portfolio ?? "",
-    work: profile?.work ?? [], education: profile?.education ?? [], languages: profile?.languages ?? [], certifications: profile?.certifications ?? [], emailDigest: profile?.emailDigest ?? false,
+    work: profile?.work ?? [], education: profile?.education ?? [], languages: profile?.languages ?? [], certifications: profile?.certifications ?? [], emailDigest: profile?.emailDigest ?? true,
   }));
   const [incomplete, setIncomplete] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
