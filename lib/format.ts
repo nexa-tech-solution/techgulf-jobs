@@ -32,3 +32,9 @@ export function timeAgo(iso: string, now: Date, d: Dict): string {
 }
 
 export const isStale = (iso: string, now: Date) => now.getTime() - new Date(iso).getTime() > 30 * 864e5;
+
+/** Deterministic 12-month series ending at the current median. */
+export function medianTrend(p50: number, yoy: number, seed = 0): number[] {
+  const wobble = [0.6, -0.4, 0.3, 0.8, -0.2, 0.5, -0.6, 0.2, 0.7, -0.3, 0.3, 0];
+  return wobble.map((w, i) => Math.round(p50 * (1 - ((yoy / 100) * (11 - i)) / 12 + (w * (1 + (seed % 3) * 0.4)) / 100)));
+}

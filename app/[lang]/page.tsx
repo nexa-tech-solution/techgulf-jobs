@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { getDict, type Locale } from "@/lib/i18n";
-import { CITIES, COMPANIES, JOBS, TODAY } from "@/lib/mock-data";
 import { CATEGORIES, formatSalary, timeAgo } from "@/lib/format";
-import { getAllJobs } from "@/lib/jobs";
+import { getCatalog } from "@/lib/catalog";
 import { SearchBar } from "@/components/filters";
 import { JobCard } from "@/components/job-card";
 import { Logo } from "@/components/ui";
@@ -11,12 +10,13 @@ import { ArrowIcon } from "@/components/icons";
 export default async function Home(props: PageProps<"/[lang]">) {
   const lang = (await props.params).lang as Locale;
   const d = getDict(lang);
-  const jobs = await getAllJobs();
-  const featured = jobs.filter((j) => j.featured);
-  const newest = [...JOBS].sort((a, b) => b.postedAt.localeCompare(a.postedAt));
+  const { jobs, companies, cities, now } = await getCatalog();
+  const newest = [...jobs].sort((a, b) => b.postedAt.localeCompare(a.postedAt));
+  const featured = newest.filter((j) => j.featured);
   const latest = newest.filter((j) => !j.featured).slice(0, 6);
   const fmt = (n: number) => new Intl.NumberFormat("en-US").format(n);
-  const hiring = COMPANIES.filter((c) => c.ats !== "direct").slice(0, 10);
+  const hiring = companies.filter((c) => c.ats !== "direct").slice(0, 10);
+  const withSalary = jobs.length ? Math.round((jobs.filter((j) => j.salary).length / jobs.length) * 100) : 0;
 
   return (
     <>
@@ -36,9 +36,9 @@ export default async function Home(props: PageProps<"/[lang]">) {
               ))}
             </p>
             <p className="mt-8 text-sm text-muted" dir="auto">
-              <span className="font-semibold text-ink">{fmt(JOBS.length * 1350)}</span> {d.stats.jobs} ·{" "}
-              <span className="font-semibold text-ink">{fmt(COMPANIES.length * 85)}</span> {d.stats.companies} ·{" "}
-              <span className="font-semibold text-ink">31%</span> {d.stats.withSalary}
+              <span className="font-semibold text-ink">{fmt(jobs.length)}</span> {d.stats.jobs} ·{" "}
+              <span className="font-semibold text-ink">{fmt(companies.length)}</span> {d.stats.companies} ·{" "}
+              <span className="font-semibold text-ink">{withSalary}%</span> {d.stats.withSalary}
             </p>
           </div>
 
@@ -47,7 +47,7 @@ export default async function Home(props: PageProps<"/[lang]">) {
             <p className="border-b border-line px-4 py-3 text-sm font-semibold">{d.latestJobs}</p>
             <ul>
               {newest.slice(0, 5).map((j) => {
-                const c = COMPANIES.find((x) => x.slug === j.companySlug)!;
+                const c = companies.find((x) => x.slug === j.companySlug) ?? { name: j.company, color: "#64748b" };
                 return (
                   <li key={j.id} className="border-b border-line last:border-0">
                     <Link href={`/${lang}/jobs/${j.id}`} className="flex gap-3 px-4 py-3 hover:bg-surface-2">
@@ -56,7 +56,7 @@ export default async function Home(props: PageProps<"/[lang]">) {
                         <p className="truncate text-sm font-medium"><bdi>{j.title}</bdi></p>
                         <p className="truncate text-xs text-muted">{j.company} · {j.city ?? d.country.REMOTE}{j.salary && <> · <bdi>{formatSalary(j.salary, d)}</bdi></>}</p>
                       </div>
-                      <span className="shrink-0 text-xs text-muted">{timeAgo(j.postedAt, TODAY, d)}</span>
+                      <span className="shrink-0 text-xs text-muted">{timeAgo(j.postedAt, new Date(now), d)}</span>
                     </Link>
                   </li>
                 );
@@ -77,7 +77,7 @@ export default async function Home(props: PageProps<"/[lang]">) {
 
       {featured.length > 0 && (
         <Section title={d.featuredJobs} href={`/${lang}/jobs`} more={d.seeAll}>
-          <div className="grid gap-3 md:grid-cols-2">{featured.map((j) => <JobCard key={j.id} job={j} d={d} lang={lang} />)}</div>
+          <div className="grid gap-3 md:grid-cols-2">{featured.map((j) => <JobCard key={j.id} job={j} d={d} lang={lang} now={now} />)}</div>
         </Section>
       )}
 
@@ -86,7 +86,7 @@ export default async function Home(props: PageProps<"/[lang]">) {
           {CATEGORIES.map((c) => (
             <Link key={c} href={`/${lang}/jobs?category=${c}`} className="flex items-center justify-between bg-surface px-4 py-4 hover:bg-surface-2">
               <span className="text-sm font-medium">{d.category[c]}</span>
-              <span className="text-xs text-muted" dir="ltr">{fmt(JOBS.filter((j) => j.category === c).length * 1350)}</span>
+              <span className="text-xs text-muted" dir="ltr">{fmt(jobs.filter((j) => j.category === c).length)}</span>
             </Link>
           ))}
         </div>
@@ -94,7 +94,7 @@ export default async function Home(props: PageProps<"/[lang]">) {
 
       <Section title={d.browseByCity}>
         <div className="flex flex-wrap gap-2">
-          {CITIES.map((c) => (
+          {cities.map((c) => (
             <Link key={c.slug} href={`/${lang}/cities/${c.slug}`} className="rounded-full border border-line bg-surface px-4 py-2 text-sm hover:border-ink/30">
               {lang === "ar" ? c.ar : c.name} <span className="text-muted">· {d.country[c.country]}</span>
             </Link>
@@ -103,7 +103,7 @@ export default async function Home(props: PageProps<"/[lang]">) {
       </Section>
 
       <Section title={d.latestJobs} href={`/${lang}/jobs?sort=date`} more={d.seeAll}>
-        <div className="grid gap-3 md:grid-cols-2">{latest.map((j) => <JobCard key={j.id} job={j} d={d} lang={lang} />)}</div>
+        <div className="grid gap-3 md:grid-cols-2">{latest.map((j) => <JobCard key={j.id} job={j} d={d} lang={lang} now={now} />)}</div>
       </Section>
 
       <section className="mx-auto max-w-6xl px-4 py-14">

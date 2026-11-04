@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { actions, useStore, type CertificationEntry, type EducationEntry, type LanguageEntry, type WorkEntry } from "@/lib/store";
 import type { Dict, Locale } from "@/lib/i18n";
 import { COUNTRY_CODES } from "@/lib/format";
-import { JOBS } from "@/lib/mock-data";
 import { SAMPLE_PROFILE } from "@/lib/sample-profile";
 import { CvEntries } from "./cv-fields";
 import { Select } from "./select";
@@ -13,18 +12,15 @@ import { CheckIcon } from "./icons";
 
 const field = "h-11 w-full rounded-lg border border-line bg-surface px-3 text-base outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/15";
 
-// Employer keywords, so typed skills use the same spelling that job matching compares against
-const KNOWN_SKILLS = [...new Set(JOBS.flatMap((job) => job.tags))].sort((a, b) => a.localeCompare(b));
-
 const subscribeNever = () => () => {};
 
 /** Saved data only exists in the browser, so the form must first render there to start with it filled in. */
-export function Onboarding(props: { d: Dict; lang: Locale }) {
+export function Onboarding(props: { d: Dict; lang: Locale; skills: string[] }) {
   const inBrowser = useSyncExternalStore(subscribeNever, () => true, () => false);
   return inBrowser ? <ProfileForm {...props} /> : null;
 }
 
-function ProfileForm({ d, lang }: { d: Dict; lang: Locale }) {
+function ProfileForm({ d, lang, skills }: { d: Dict; lang: Locale; skills: string[] }) {
   const t = d.onboard;
   const router = useRouter();
   const { user, profile } = useStore();
@@ -120,7 +116,7 @@ function ProfileForm({ d, lang }: { d: Dict; lang: Locale }) {
         </div>
 
         <div className="mt-5">{label(t.skills)}
-          <SkillPicker suggestions={KNOWN_SKILLS} selected={form.skills} onAdd={(skill) => set({ skills: [...form.skills, skill] })} placeholder="React, AWS…" addLabel={t.addSkill} inputClassName={field} />
+          <SkillPicker suggestions={skills} selected={form.skills} onAdd={(skill) => set({ skills: [...form.skills, skill] })} placeholder="React, AWS…" addLabel={t.addSkill} inputClassName={field} />
           {form.skills.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5" dir="ltr">
               {form.skills.map((s) => (

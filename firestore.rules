@@ -9,6 +9,12 @@ service cloud.firestore {
     match /companies/{slug} {
       allow read: if true;
     }
+    match /cities/{slug} {
+      allow read: if true;
+    }
+    match /market/{docId} {
+      allow read: if true;
+    }
     match /jobs/{jobId} {
       allow read: if resource.data.status == 'active';
     }

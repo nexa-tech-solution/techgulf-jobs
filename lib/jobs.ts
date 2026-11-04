@@ -1,4 +1,3 @@
-import { COMPANIES, JOBS } from "./mock-data";
 import type { Job } from "./types";
 
 export interface JobFilters {
@@ -6,13 +5,6 @@ export interface JobFilters {
   seniority?: string; visa?: string; salary?: string; nationals?: string; direct?: string;
   posted?: string; sort?: string;
 }
-
-export const getAllJobs = async (): Promise<Job[]> =>
-  [...JOBS].sort((a, b) => Number(!!b.featured) - Number(!!a.featured) || b.postedAt.localeCompare(a.postedAt));
-
-export const getJob = async (id: string) => JOBS.find((j) => j.id === id);
-export const getCompany = async (slug: string) => COMPANIES.find((c) => c.slug === slug);
-export const jobsByCompany = (slug: string) => JOBS.filter((j) => j.companySlug === slug);
 
 export function filterJobs(jobs: Job[], f: JobFilters, now: Date): Job[] {
   const terms = (f.q ?? "").toLowerCase().split(/\s+/).filter(Boolean);

@@ -139,7 +139,7 @@ export const SALARY_SAMPLE = 4812;
 export const TREND_MONTHS = ["Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov"];
 
 /** Year-over-year change of the median, in % — keyed by `${role}|${city}` */
-const YOY: Record<string, number> = {
+export const YOY: Record<string, number> = {
   "Backend Engineer|Dubai": 4.2, "Backend Engineer|Riyadh": 5.1, "Backend Engineer|Bengaluru": 7.5,
   "Frontend Engineer|Dubai": 2.8, "Frontend Engineer|Bengaluru": 3.1, "DevOps Engineer|Dubai": 6.4,
   "DevOps Engineer|Riyadh": 8.2, "Data Scientist|Dubai": 9.6, "Data Scientist|Bengaluru": 14.8,
@@ -147,11 +147,6 @@ const YOY: Record<string, number> = {
   "QA Engineer|Riyadh": -1.2, "Product Manager|Dubai": 4.0,
 };
 
-/** Deterministic 12-month series ending at the current median. */
-export function medianTrend(p50: number, yoy: number, seed = 0): number[] {
-  const wobble = [0.6, -0.4, 0.3, 0.8, -0.2, 0.5, -0.6, 0.2, 0.7, -0.3, 0.3, 0];
-  return wobble.map((w, i) => Math.round(p50 * (1 - ((yoy / 100) * (11 - i)) / 12 + (w * (1 + (seed % 3) * 0.4)) / 100)));
-}
 
 /** Fixed categorical colour per city (validated palette; colour follows the entity, not rank). */
 export const CITY_COLOR: Record<string, { light: string; dark: string }> = {
@@ -160,7 +155,6 @@ export const CITY_COLOR: Record<string, { light: string; dark: string }> = {
   Doha: { light: "#1baf7a", dark: "#199e70" },
   Bengaluru: { light: "#eda100", dark: "#c98500" },
 };
-export const yoyOf = (role: string, city: string) => YOY[`${role}|${city}`] ?? 0;
 
 export const TECH_TRENDS: { tech: string; demand: number; premium: number; jobs: number; category: Category }[] = [
   { tech: "LLM / GenAI", demand: 82, premium: 28, jobs: 3420, category: "data-ai" },

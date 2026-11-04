@@ -3,7 +3,6 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { Dict, Locale } from "@/lib/i18n";
 import type { Job } from "@/lib/types";
-import { COMPANIES } from "@/lib/mock-data";
 import { formatSalary } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import { Logo } from "./ui";
@@ -101,7 +100,7 @@ export function CvMatch({ d, lang, jobs }: { d: Dict; lang: Locale; jobs: Job[] 
         </div>
         <ul className="mt-4 space-y-3">
           {top.map(({ j, score, have, missing }) => {
-            const c = COMPANIES.find((x) => x.slug === j.companySlug)!;
+            const c = { name: j.company, color: j.companyColor ?? "#64748b" };
             return (
               <li key={j.id} className="rounded-2xl border border-line bg-surface p-4 transition hover:border-ink/25 md:p-5">
                 <div className="flex gap-4">

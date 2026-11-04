@@ -1,28 +1,36 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { getDict, type Locale } from "@/lib/i18n";
-import { CITIES, JOBS, SALARY_BENCHMARKS } from "@/lib/mock-data";
+import { getCatalog, getMarketData } from "@/lib/catalog";
 import { CATEGORIES } from "@/lib/format";
 import { JobCard } from "@/components/job-card";
 
-export const generateStaticParams = () => CITIES.map((c) => ({ city: c.slug }));
-
 export async function generateMetadata(props: PageProps<"/[lang]/cities/[city]">): Promise<Metadata> {
   const { city } = await props.params;
-  const c = CITIES.find((x) => x.slug === city);
+  const c = (await getCatalog()).cities.find((x) => x.slug === city);
   return c ? { title: `IT jobs in ${c.name}` } : {};
 }
 
-export default async function CityPage(props: PageProps<"/[lang]/cities/[city]">) {
-  const { lang: l, city } = await props.params;
+export default function CityPage(props: PageProps<"/[lang]/cities/[city]">) {
+  return (
+    <Suspense fallback={<div className="mx-auto h-64 max-w-6xl animate-pulse px-4 py-12" />}>
+      <CityContent params={props.params} />
+    </Suspense>
+  );
+}
+
+async function CityContent({ params }: Pick<PageProps<"/[lang]/cities/[city]">, "params">) {
+  const { lang: l, city } = await params;
   const lang = l as Locale;
   const d = getDict(lang);
-  const c = CITIES.find((x) => x.slug === city);
+  const [catalog, market] = await Promise.all([getCatalog(), getMarketData()]);
+  const c = catalog.cities.find((x) => x.slug === city);
   if (!c) notFound();
   const name = lang === "ar" ? c.ar : c.name;
-  const jobs = JOBS.filter((j) => j.city === c.name);
-  const bench = SALARY_BENCHMARKS.filter((b) => b.city === c.name);
+  const jobs = catalog.jobs.filter((j) => j.city === c.name);
+  const bench = (market?.benchmarks ?? []).filter((b) => b.city === c.name);
   return (
     <>
       {/* City hero — swap gradient for a licensed skyline photo (AVIF/WebP) */}
@@ -39,7 +47,7 @@ export default async function CityPage(props: PageProps<"/[lang]/cities/[city]">
         </div>
       </div>
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6 lg:grid-cols-[1fr_300px]">
-        <div className="grid gap-3">{jobs.map((j) => <JobCard key={j.id} job={j} d={d} lang={lang} />)}</div>
+        <div className="grid gap-3">{jobs.map((j) => <JobCard key={j.id} job={j} d={d} lang={lang} now={catalog.now} />)}</div>
         {bench.length > 0 && (
           <aside className="card p-4 lg:self-start">
             <h2 className="font-semibold">{d.nav.salaries}</h2>

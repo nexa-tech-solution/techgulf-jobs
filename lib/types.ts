@@ -25,4 +25,14 @@ export interface Job {
   category: Category; tags: string[]; salary?: Salary; visaSponsored: boolean;
   nationalsPreferred: boolean; directEmployer: boolean; featured?: boolean; experience?: string;
   description: string; applyUrl: string; postedAt: string;
+  companyColor?: string;
+}
+
+export interface City { slug: string; name: string; country: Country; ar: string }
+export interface SalaryBenchmark { role: string; category: Category; city: string; currency: string; p25: number; p50: number; p75: number; period: "month" | "year" }
+export interface TechTrend { tech: string; demand: number; premium: number; jobs: number; category: Category }
+export interface MarketNote { date: string; text: string }
+export interface MarketData {
+  benchmarks: SalaryBenchmark[]; techTrends: TechTrend[]; notes: MarketNote[];
+  trendMonths: string[]; yoy: Record<string, number>; sampleSize: number; updatedAt: string;
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getDict, type Locale } from "@/lib/i18n";
-import { COMPANIES, JOBS } from "@/lib/mock-data";
-import type { Country } from "@/lib/types";
+import { getCatalog } from "@/lib/catalog";
+import type { Company, Country, Job } from "@/lib/types";
 import { PageHeader } from "@/components/ui";
 import { CompanyDirectory, type CompanyStats } from "@/components/company-directory";
 
@@ -9,9 +9,9 @@ export const metadata: Metadata = { title: "Tech companies hiring in the Gulf & 
 
 const HQ_COUNTRY: [RegExp, Country][] = [[/UAE/, "AE"], [/Saudi/, "SA"], [/Qatar/, "QA"], [/India/, "IN"]];
 
-function stats(): CompanyStats[] {
-  return COMPANIES.filter((c) => c.ats !== "direct").map((company) => {
-    const jobs = JOBS.filter((j) => j.companySlug === company.slug);
+function stats(companies: Company[], allJobs: Job[]): CompanyStats[] {
+  return companies.filter((c) => c.ats !== "direct").map((company) => {
+    const jobs = allJobs.filter((j) => j.companySlug === company.slug);
     const tagCount = new Map<string, number>();
     jobs.flatMap((j) => j.tags).forEach((t) => tagCount.set(t, (tagCount.get(t) ?? 0) + 1));
     return {
@@ -30,7 +30,8 @@ function stats(): CompanyStats[] {
 export default async function Companies(props: PageProps<"/[lang]/companies">) {
   const lang = (await props.params).lang as Locale;
   const d = getDict(lang);
-  const items = stats();
+  const { jobs, companies } = await getCatalog();
+  const items = stats(companies, jobs);
   const open = items.reduce((n, i) => n + i.open, 0);
   const visa = items.filter((i) => i.visa).length;
   return (

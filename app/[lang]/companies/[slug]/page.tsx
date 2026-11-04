@@ -2,17 +2,16 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getDict, type Locale } from "@/lib/i18n";
-import { COMPANIES } from "@/lib/mock-data";
-import { getCompany, jobsByCompany } from "@/lib/jobs";
+import { getCatalog } from "@/lib/catalog";
 import { JobCard } from "@/components/job-card";
 import { Logo } from "@/components/ui";
 import { ExternalIcon } from "@/components/icons";
 
-export const generateStaticParams = () => COMPANIES.map((c) => ({ slug: c.slug }));
-
 export async function generateMetadata(props: PageProps<"/[lang]/companies/[slug]">): Promise<Metadata> {
-  const c = await getCompany((await props.params).slug);
-  return c ? { title: `${c.name} careers – ${jobsByCompany(c.slug).length} open tech jobs` } : {};
+  const { slug } = await props.params;
+  const { jobs, companies } = await getCatalog();
+  const c = companies.find((x) => x.slug === slug);
+  return c ? { title: `${c.name} careers – ${jobs.filter((j) => j.companySlug === slug).length} open tech jobs` } : {};
 }
 
 export default function CompanyPage(props: PageProps<"/[lang]/companies/[slug]">) {
@@ -44,9 +43,10 @@ async function CompanyContent({ params }: Pick<PageProps<"/[lang]/companies/[slu
   const { lang: l, slug } = await params;
   const lang = l as Locale;
   const d = getDict(lang);
-  const c = await getCompany(slug);
+  const catalog = await getCatalog();
+  const c = catalog.companies.find((x) => x.slug === slug);
   if (!c) notFound();
-  const jobs = jobsByCompany(slug);
+  const jobs = catalog.jobs.filter((j) => j.companySlug === slug);
   const facts: [string, string][] = [[d.industry, c.industry], [d.hq, c.hq], [d.employees, c.size], [d.ats, c.ats]];
   return (
     <>
@@ -67,7 +67,7 @@ async function CompanyContent({ params }: Pick<PageProps<"/[lang]/companies/[slu
         </div>
       </div>
       <div className="mx-auto grid max-w-6xl gap-3 px-4 py-6 md:grid-cols-2">
-        {jobs.map((j) => <JobCard key={j.id} job={j} d={d} lang={lang} />)}
+        {jobs.map((j) => <JobCard key={j.id} job={j} d={d} lang={lang} now={catalog.now} />)}
       </div>
     </>
   );

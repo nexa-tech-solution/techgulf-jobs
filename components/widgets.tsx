@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { actions, useStore, type Alert, type AppStatus, type Channel } from "@/lib/store";
 import { describeFilters } from "@/lib/describe";
 import { filterJobs } from "@/lib/jobs";
-import { TODAY } from "@/lib/mock-data";
 import type { Dict, Locale } from "@/lib/i18n";
 import type { Job } from "@/lib/types";
 import { CATEGORIES } from "@/lib/format";
@@ -13,7 +12,7 @@ import { Select } from "./select";
 import { BellIcon, CheckIcon } from "./icons";
 
 /* ---------- Alerts (managed inside My jobs) ---------- */
-function AlertsManager({ d, lang, jobs }: { d: Dict; lang: Locale; jobs: Job[] }) {
+function AlertsManager({ d, lang, jobs, now }: { d: Dict; lang: Locale; jobs: Job[]; now: string }) {
   const { alerts, user } = useStore();
   if (alerts.length === 0)
     return (
@@ -28,7 +27,7 @@ function AlertsManager({ d, lang, jobs }: { d: Dict; lang: Locale; jobs: Job[] }
   return (
     <ul className="mt-4 space-y-3">
       {alerts.map((a) => {
-        const n = filterJobs(jobs, a.filters, TODAY).length;
+        const n = filterJobs(jobs, a.filters, new Date(now)).length;
         const qs = new URLSearchParams(a.filters).toString();
         return (
           <li key={a.id} className="rounded-xl border border-line bg-surface p-4 md:p-5">
@@ -73,7 +72,7 @@ const L = ({ label, children }: { label: string; children: React.ReactNode }) =>
 /* ---------- Saved + application tracker ---------- */
 const STATUSES: AppStatus[] = ["saved", "applied", "interview", "offer", "rejected"];
 
-export function MyJobs({ d, lang, jobs }: { d: Dict; lang: Locale; jobs: Job[] }) {
+export function MyJobs({ d, lang, jobs, now }: { d: Dict; lang: Locale; jobs: Job[]; now: string }) {
   const store = useStore();
   const [tab, setTab] = useState<"saved" | "tracker" | "alerts">("saved");
   useEffect(() => {
@@ -91,7 +90,7 @@ export function MyJobs({ d, lang, jobs }: { d: Dict; lang: Locale; jobs: Job[] }
             className={`-mb-px h-11 border-b-2 px-4 text-sm font-medium ${tab === k ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"}`}>{label} <span className="text-muted">{n}</span></button>
         ))}
       </div>
-      {tab === "alerts" ? <AlertsManager d={d} lang={lang} jobs={jobs} /> : mine.length === 0 ? (
+      {tab === "alerts" ? <AlertsManager d={d} lang={lang} jobs={jobs} now={now} /> : mine.length === 0 ? (
         <div className="mt-6 rounded-xl border border-dashed border-line bg-surface p-8 text-center">
           <p className="text-muted">{d.emptySaved}</p>
           <Link href={`/${lang}/jobs`} className="mt-4 inline-flex h-11 items-center rounded-lg bg-primary px-5 font-semibold text-on-primary">{d.nav.jobs}</Link>

@@ -4,7 +4,6 @@ import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import type { Dict, Locale } from "@/lib/i18n";
 import type { Job } from "@/lib/types";
 import { filterJobs, type JobFilters } from "@/lib/jobs";
-import { TODAY } from "@/lib/mock-data";
 import { FilterBar, SortSelect, type Patch } from "./filter-bar";
 import { JobCard } from "./job-card";
 import { SaveSearch } from "./account";
@@ -18,15 +17,15 @@ const PAGE = 20;
  * Filters run in the browser — instant, no server round-trip per click.
  * The URL is kept in sync (shareable, Back button works); first paint is still server-rendered for SEO.
  */
-export function JobsBrowser({ d, lang, jobs, initial, counts }: {
-  d: Dict; lang: Locale; jobs: Job[]; initial: JobFilters;
+export function JobsBrowser({ d, lang, jobs, initial, counts, now }: {
+  d: Dict; lang: Locale; jobs: Job[]; initial: JobFilters; now: string;
   counts: { country: Record<string, number>; category: Record<string, number> };
 }) {
   const [f, setF] = useState<JobFilters>(initial);
   const [q, setQ] = useState(initial.q ?? "");
   const [limit, setLimit] = useState(PAGE);
   const deferred = useDeferredValue(f);
-  const results = useMemo(() => filterJobs(jobs, deferred, TODAY), [jobs, deferred]);
+  const results = useMemo(() => filterJobs(jobs, deferred, new Date(now)), [jobs, deferred, now]);
 
   const go = (patch: Patch, mode: "push" | "replace" = "push") => {
     const next = clean({ ...f, ...patch });
@@ -110,7 +109,7 @@ export function JobsBrowser({ d, lang, jobs, initial, counts }: {
           <div className={`transition-opacity duration-150 ${stale ? "opacity-70" : ""}`}>
             {results.length > 0 ? (
               <div className="grid gap-3">
-                {results.slice(0, limit).map((j) => <JobCard key={j.id} job={j} d={d} lang={lang} />)}
+                {results.slice(0, limit).map((j) => <JobCard key={j.id} job={j} d={d} lang={lang} now={now} />)}
                 {results.length > limit && (
                   <button type="button" onClick={() => setLimit(limit + PAGE)} className="h-11 rounded-lg border border-line bg-surface text-sm font-medium hover:border-ink/30">
                     {d.showMore.replace("{n}", String(results.length - limit))}

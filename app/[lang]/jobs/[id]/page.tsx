@@ -1,31 +1,39 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { getDict, type Locale } from "@/lib/i18n";
-import { getAllJobs, getJob, jobsByCompany } from "@/lib/jobs";
-import { COMPANIES, JOBS, TODAY } from "@/lib/mock-data";
+import { getCatalog } from "@/lib/catalog";
 import { formatSalary, salaryConverted, timeAgo } from "@/lib/format";
 import { JobBadges, JobCard, jobPlace } from "@/components/job-card";
 import { Logo, Tag } from "@/components/ui";
 import { ReportButton, SaveButton } from "@/components/client";
 import { BackIcon, ExternalIcon, ShareIcon, ShieldIcon } from "@/components/icons";
 
-export const generateStaticParams = () => JOBS.map((j) => ({ id: j.id }));
-
 export async function generateMetadata(props: PageProps<"/[lang]/jobs/[id]">): Promise<Metadata> {
-  const job = await getJob((await props.params).id);
+  const { id } = await props.params;
+  const job = (await getCatalog()).jobs.find((j) => j.id === id);
   if (!job) return {};
   return { title: `${job.title} at ${job.company} — ${job.city ?? "Remote"}`, description: job.description.slice(0, 155) };
 }
 
-export default async function JobPage(props: PageProps<"/[lang]/jobs/[id]">) {
-  const { lang: l, id } = await props.params;
+export default function JobPage(props: PageProps<"/[lang]/jobs/[id]">) {
+  return (
+    <Suspense fallback={<div className="mx-auto h-96 max-w-6xl animate-pulse px-4 py-6" />}>
+      <JobContent params={props.params} />
+    </Suspense>
+  );
+}
+
+async function JobContent({ params }: Pick<PageProps<"/[lang]/jobs/[id]">, "params">) {
+  const { lang: l, id } = await params;
   const lang = l as Locale;
   const d = getDict(lang);
-  const job = await getJob(id);
-  if (!job) notFound();
-  const company = COMPANIES.find((c) => c.slug === job.companySlug)!;
-  const similar = (await getAllJobs()).filter((j) => j.id !== job.id && (j.category === job.category || j.country === job.country)).slice(0, 4);
+  const { jobs, companies, now } = await getCatalog();
+  const job = jobs.find((j) => j.id === id);
+  const company = companies.find((c) => c.slug === job?.companySlug);
+  if (!job || !company) notFound();
+  const similar = jobs.filter((j) => j.id !== job.id && (j.category === job.category || j.country === job.country)).slice(0, 4);
   const conv = job.salary && salaryConverted(job.salary);
   const shareText = encodeURIComponent(`${job.title} at ${job.company} — ${job.city ?? "Remote"}`);
 
@@ -43,7 +51,7 @@ export default async function JobPage(props: PageProps<"/[lang]/jobs/[id]">) {
 
   const facts: [string, string][] = [
     [d.jobFacts.location, jobPlace(job, d)], [d.jobFacts.mode, d.mode[job.mode]], [d.jobFacts.level, d.level[job.seniority]],
-    [d.jobFacts.experience, job.experience ?? "—"], [d.jobFacts.field, d.category[job.category]], [d.jobFacts.posted, timeAgo(job.postedAt, TODAY, d)],
+    [d.jobFacts.experience, job.experience ?? "—"], [d.jobFacts.field, d.category[job.category]], [d.jobFacts.posted, timeAgo(job.postedAt, new Date(now), d)],
   ];
 
   const ApplyBlock = (
@@ -55,7 +63,7 @@ export default async function JobPage(props: PageProps<"/[lang]/jobs/[id]">) {
         <SaveButton id={job.id} label={d.save} savedLabel={d.saved} />
         <ReportButton t={d} />
       </div>
-      <p className="text-xs text-muted">{d.source}: <span className="capitalize">{job.source}</span> · {timeAgo(job.postedAt, TODAY, d)}</p>
+      <p className="text-xs text-muted">{d.source}: <span className="capitalize">{job.source}</span> · {timeAgo(job.postedAt, new Date(now), d)}</p>
     </div>
   );
 
@@ -74,7 +82,7 @@ export default async function JobPage(props: PageProps<"/[lang]/jobs/[id]">) {
           {job.salary && (
             <p className="mt-3 text-xl font-semibold"><bdi>{formatSalary(job.salary, d)}</bdi> {conv && <span className="text-base font-normal text-muted"><bdi>{conv}</bdi></span>}</p>
           )}
-          <div className="mt-3 flex flex-wrap gap-1.5"><JobBadges job={job} d={d} /></div>
+          <div className="mt-3 flex flex-wrap gap-1.5"><JobBadges job={job} d={d} now={now} /></div>
 
           <dl className="mt-5 grid grid-cols-2 gap-3 card p-4 sm:grid-cols-3">
             {facts.map(([k, v]) => <div key={k}><dt className="text-xs text-muted">{k}</dt><dd className="mt-0.5 text-sm font-medium" dir="auto">{v}</dd></div>)}
@@ -102,7 +110,7 @@ export default async function JobPage(props: PageProps<"/[lang]/jobs/[id]">) {
             <p className="mt-2 text-sm text-muted" dir="auto">{company.about}</p>
             <p className="mt-2 text-sm"><span className="text-muted">{d.industry}:</span> {company.industry}</p>
             <p className="text-sm"><span className="text-muted">{d.hq}:</span> {company.hq}</p>
-            <Link href={`/${lang}/companies/${company.slug}`} className="mt-3 inline-block text-sm font-medium text-primary">{d.viewAllJobs.replace("{n}", String(jobsByCompany(company.slug).length))}</Link>
+            <Link href={`/${lang}/companies/${company.slug}`} className="mt-3 inline-block text-sm font-medium text-primary">{d.viewAllJobs.replace("{n}", String(jobs.filter((j) => j.companySlug === company.slug).length))}</Link>
           </div>
         </aside>
       </div>
@@ -110,7 +118,7 @@ export default async function JobPage(props: PageProps<"/[lang]/jobs/[id]">) {
       {similar.length > 0 && (
         <section className="mt-10">
           <h2 className="text-xl font-semibold">{d.similar}</h2>
-          <div className="mt-3 grid gap-3 md:grid-cols-2">{similar.map((j) => <JobCard key={j.id} job={j} d={d} lang={lang} />)}</div>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">{similar.map((j) => <JobCard key={j.id} job={j} d={d} lang={lang} now={now} />)}</div>
         </section>
       )}
 

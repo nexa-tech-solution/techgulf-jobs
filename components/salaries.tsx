@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { Dict } from "@/lib/i18n";
-import { CATEGORIES, TO_AED } from "@/lib/format";
-import { MARKET_NOTES, SALARY_BENCHMARKS, TECH_TRENDS, TREND_MONTHS, medianTrend, yoyOf } from "@/lib/mock-data";
+import { CATEGORIES, TO_AED, medianTrend } from "@/lib/format";
+import type { MarketData, SalaryBenchmark } from "@/lib/types";
 import { Select } from "./select";
 
-type Bench = (typeof SALARY_BENCHMARKS)[number];
+type Bench = SalaryBenchmark;
 const cityVar = (c: string) => `var(--city-${c.toLowerCase().replace(/\s+/g, "-")})`;
 const USD_PER_AED = 0.2723;
 const toUsdMonth = (n: number, cur: string, per: string) => (per === "year" ? n / 12 : n) * (TO_AED[cur] ?? 1) * USD_PER_AED;
@@ -26,7 +26,7 @@ function Delta({ v }: { v: number }) {
 }
 
 /* ---------------- Trend line chart ---------------- */
-function TrendChart({ series, d }: { series: { city: string; data: number[] }[]; d: Dict }) {
+function TrendChart({ series, d, months }: { series: { city: string; data: number[] }[]; d: Dict; months: string[] }) {
   const box = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(720);
   const [hover, setHover] = useState<number | null>(null);
@@ -42,7 +42,7 @@ function TrendChart({ series, d }: { series: { city: string; data: number[] }[];
   const step = 1000;
   const min = Math.floor((Math.min(...all) * 0.96) / step) * step;
   const max = Math.ceil((Math.max(...all) * 1.02) / step) * step;
-  const x = (i: number) => pad.l + (i / (TREND_MONTHS.length - 1)) * (w - pad.l - pad.r);
+  const x = (i: number) => pad.l + (i / (months.length - 1)) * (w - pad.l - pad.r);
   const y = (v: number) => pad.t + (1 - (v - min) / (max - min)) * (h - pad.t - pad.b);
   const ticks = Array.from({ length: 4 }, (_, i) => min + ((max - min) * i) / 3);
 
@@ -53,8 +53,8 @@ function TrendChart({ series, d }: { series: { city: string; data: number[] }[];
   const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
     const px = e.clientX - r.left;
-    const i = Math.round(((px - pad.l) / (w - pad.l - pad.r)) * (TREND_MONTHS.length - 1));
-    setHover(Math.min(TREND_MONTHS.length - 1, Math.max(0, i)));
+    const i = Math.round(((px - pad.l) / (w - pad.l - pad.r)) * (months.length - 1));
+    setHover(Math.min(months.length - 1, Math.max(0, i)));
   };
 
   return (
@@ -66,7 +66,7 @@ function TrendChart({ series, d }: { series: { city: string; data: number[] }[];
             <text x={pad.l - 8} y={y(t)} dy="0.32em" textAnchor="end" className="fill-muted text-[11px] tabular-nums">${fmtNum(t / 1000)}k</text>
           </g>
         ))}
-        {TREND_MONTHS.map((m, i) => (i % 2 === 1 || i === TREND_MONTHS.length - 1) && (
+        {months.map((m, i) => (i % 2 === 1 || i === months.length - 1) && (
           <text key={m + i} x={x(i)} y={h - 8} textAnchor="middle" className="fill-muted text-[11px]">{m}</text>
         ))}
         {hover !== null && <line x1={x(hover)} x2={x(hover)} y1={pad.t} y2={h - pad.b} stroke="var(--muted)" strokeWidth={1} />}
@@ -90,7 +90,7 @@ function TrendChart({ series, d }: { series: { city: string; data: number[] }[];
       {hover !== null && (
         <div className="pointer-events-none absolute top-2 z-10 min-w-40 rounded-lg border border-line bg-surface px-3 py-2 text-xs shadow-[0_8px_24px_-12px_rgb(15_23_42/0.3)]"
           style={{ left: Math.min(x(hover) + 12, w - 176) }}>
-          <p className="mb-1 font-semibold">{TREND_MONTHS[hover]} {hover === 0 ? "2025" : "2026"}</p>
+          <p className="mb-1 font-semibold">{months[hover]} {hover === 0 ? "2025" : "2026"}</p>
           {[...series].sort((a, b) => b.data[hover] - a.data[hover]).map((s) => (
             <p key={s.city} className="flex items-center justify-between gap-4">
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full" style={{ background: cityVar(s.city) }} />{s.city}</span>
@@ -106,7 +106,9 @@ function TrendChart({ series, d }: { series: { city: string; data: number[] }[];
 /* ---------------- Page body ---------------- */
 const ROLE_TABS = ["Backend Engineer", "DevOps Engineer", "Data Scientist", "Frontend Engineer", "Cybersecurity Analyst"];
 
-export function SalaryDashboard({ d, lang }: { d: Dict; lang: string }) {
+export function SalaryDashboard({ d, lang, market }: { d: Dict; lang: string; market: MarketData }) {
+  const { benchmarks: SALARY_BENCHMARKS, techTrends: TECH_TRENDS, notes: MARKET_NOTES, trendMonths: TREND_MONTHS } = market;
+  const yoyOf = (role: string, city: string) => market.yoy[`${role}|${city}`] ?? 0;
   const [usd, setUsd] = useState(false);
   const [role, setRole] = useState(ROLE_TABS[0]);
   const [city, setCity] = useState("");
@@ -153,7 +155,7 @@ export function SalaryDashboard({ d, lang }: { d: Dict; lang: string }) {
               {series.map((s) => <span key={s.city} className="inline-flex items-center gap-1.5"><span className="h-0.5 w-4 rounded" style={{ background: cityVar(s.city) }} />{s.city}</span>)}
               <span>· USD / month</span>
             </div>
-            <TrendChart series={series} d={d} />
+            <TrendChart series={series} d={d} months={TREND_MONTHS} />
           </div>
           <ul className="space-y-3 lg:border-s lg:border-line lg:ps-6">
             {roleRows.map((b) => (

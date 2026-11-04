@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -55,7 +56,10 @@ export default async function LangLayout(props: LayoutProps<"/[lang]">) {
               ))}
             </nav>
             <div className="ms-auto flex items-center">
-              <LangSwitch label={d.language} />
+              {/* usePathname is only known at request time on runtime-rendered routes */}
+              <Suspense fallback={<span className="inline-flex h-11 items-center px-3 text-sm font-medium text-muted">{d.language}</span>}>
+                <LangSwitch label={d.language} />
+              </Suspense>
               <ThemeToggle label={d.theme} />
               <Link href={`/${lang}/saved`} className="hidden h-11 items-center rounded-lg px-3 text-sm font-medium text-muted hover:text-ink sm:inline-flex">{d.nav.saved}</Link>
               <HeaderAccount d={d} lang={lang} />
