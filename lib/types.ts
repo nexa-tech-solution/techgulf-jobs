@@ -4,7 +4,7 @@ export type Seniority = "intern" | "junior" | "mid" | "senior" | "lead";
 export type Category =
   | "backend" | "frontend" | "data-ai" | "devops" | "security" | "erp"
   | "qa" | "network" | "product" | "support" | "other";
-export type Source = "greenhouse" | "lever" | "ashby" | "workday" | "careers" | "careerjet" | "jooble" | "direct";
+export type Source = "greenhouse" | "lever" | "ashby" | "smartrecruiters" | "workable" | "workday" | "careers" | "careerjet" | "jooble" | "direct";
 
 export interface Salary { min?: number; max?: number; currency: string; period: "year" | "month" }
 
@@ -16,7 +16,7 @@ export interface RawJob {
 
 export interface Company {
   slug: string; name: string; color: string; size: string; industry: string;
-  hq: string; ats: Source; careersUrl: string; about: string;
+  hq: string; ats: Source; careersUrl: string; about: string; logo?: string;
 }
 
 export interface Job {
@@ -25,7 +25,7 @@ export interface Job {
   category: Category; tags: string[]; salary?: Salary; visaSponsored: boolean;
   nationalsPreferred: boolean; directEmployer: boolean; featured?: boolean; experience?: string;
   description: string; applyUrl: string; postedAt: string;
-  companyColor?: string;
+  companyColor?: string; companyLogo?: string;
 }
 
 export interface City { slug: string; name: string; country: Country; ar: string }

@@ -23,7 +23,7 @@ export function jobPlace(job: Job, d: Dict) {
 }
 
 export function JobCard({ job, d, lang, now }: { job: Job; d: Dict; lang: Locale; now: string }) {
-  const company = { name: job.company, color: job.companyColor ?? "#64748b" };
+  const company = { name: job.company, color: job.companyColor ?? "#64748b", logo: job.companyLogo };
   const conv = job.salary && salaryConverted(job.salary);
   return (
     <article className={`card card-hover group relative p-4 md:p-5 ${job.featured ? "!border-accent/40" : ""}`}>

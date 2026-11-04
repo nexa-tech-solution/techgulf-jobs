@@ -19,11 +19,11 @@ export async function getCatalog(): Promise<{ jobs: Job[]; companies: Company[];
   ]);
 
   const companies = companySnap.docs.map((d) => ({ ...d.data(), slug: d.id }) as Company);
-  const color = new Map(companies.map((c) => [c.slug, c.color]));
+  const bySlug = new Map(companies.map((c) => [c.slug, c]));
   const jobs = jobSnap.docs
     .map((d) => {
       const job = { ...d.data(), id: d.id } as Job;
-      return { ...job, companyColor: color.get(job.companySlug) };
+      return { ...job, companyColor: bySlug.get(job.companySlug)?.color, companyLogo: bySlug.get(job.companySlug)?.logo };
     })
     .sort((a, b) => Number(!!b.featured) - Number(!!a.featured) || b.postedAt.localeCompare(a.postedAt));
 

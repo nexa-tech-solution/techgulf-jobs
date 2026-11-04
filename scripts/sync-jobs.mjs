@@ -1,24 +1,60 @@
 // Syncs real jobs from public ATS APIs into Firestore.
 //   npm run sync:jobs -- --dry-run                 preview, no credentials needed, writes nothing
-//   npm run sync:jobs                              write jobs, close jobs that disappeared
+//   npm run sync:jobs                              write jobs, delete expired ones (run this daily)
 //   npm run sync:jobs -- --remove-demo             also delete demo jobs (those not created by this script)
 //   npm run sync:jobs -- --dry-run --company=careem
-// Writing needs GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+// Writing needs GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json (in the shell or .env)
+//
+// Each run deletes synced jobs that left the employer's board, passed MAX_AGE_DAYS,
+// or belong to a company removed from SOURCES, so the collection cannot grow without limit.
 
 // To add a company: find its board slug on its careers page and add one line.
 const SOURCES = [
-  { ats: "greenhouse", board: "careem", slug: "careem", name: "Careem", color: "#16a34a", hq: "Dubai, UAE" },
-  { ats: "greenhouse", board: "tamara", slug: "tamara", name: "Tamara", color: "#7c3aed", hq: "Riyadh, Saudi Arabia" },
-  { ats: "greenhouse", board: "groww", slug: "groww", name: "Groww", color: "#00b386", hq: "Bengaluru, India" },
-  { ats: "ashby", board: "ziina", slug: "ziina", name: "Ziina", color: "#0f766e", hq: "Dubai, UAE" },
-  { ats: "lever", board: "cred", slug: "cred", name: "CRED", color: "#1f2937", hq: "Bengaluru, India" },
-  { ats: "lever", board: "meesho", slug: "meesho", name: "Meesho", color: "#9f2089", hq: "Bengaluru, India" },
+  { ats: "greenhouse", board: "careem", slug: "careem", industry: "Super-app / Mobility", about: "Super-app for rides, food delivery and payments across the Middle East.", domain: "careem.com", name: "Careem", color: "#16a34a", hq: "Dubai, UAE" },
+  { ats: "greenhouse", board: "tamara", slug: "tamara", industry: "Fintech / BNPL", about: "Buy-now-pay-later and payments platform for shoppers in the GCC.", domain: "tamara.co", name: "Tamara", color: "#7c3aed", hq: "Riyadh, Saudi Arabia" },
+  { ats: "greenhouse", board: "groww", slug: "groww", industry: "Fintech / Investing", about: "Investing app for stocks and mutual funds in India.", domain: "groww.in", name: "Groww", color: "#00b386", hq: "Bengaluru, India" },
+  { ats: "ashby", board: "ziina", slug: "ziina", industry: "Fintech / Payments", about: "Payments app for people and small businesses in the UAE.", domain: "ziina.com", name: "Ziina", color: "#0f766e", hq: "Dubai, UAE" },
+  { ats: "lever", board: "cred", slug: "cred", industry: "Fintech", about: "Credit card bill payments and rewards app for India.", domain: "cred.club", name: "CRED", color: "#1f2937", hq: "Bengaluru, India" },
+  { ats: "lever", board: "meesho", slug: "meesho", industry: "E-commerce", about: "Online marketplace for value shoppers and small sellers in India.", domain: "meesho.com", name: "Meesho", color: "#9f2089", hq: "Bengaluru, India" },
+  { ats: "workable", board: "salla", slug: "salla", industry: "E-commerce SaaS", about: "Platform for building and running online stores in Saudi Arabia.", domain: "salla.com", name: "Salla", color: "#004d5a", hq: "Riyadh, Saudi Arabia" },
+  { ats: "workable", board: "lucidya", slug: "lucidya", industry: "AI / Customer experience", about: "AI platform for customer experience and social listening, with a focus on Arabic.", domain: "lucidya.com", name: "Lucidya", color: "#4f46e5", hq: "Riyadh, Saudi Arabia" },
+  { ats: "workable", board: "foodics", slug: "foodics", industry: "Restaurant SaaS", about: "Cloud point-of-sale and restaurant management platform.", domain: "foodics.com", name: "Foodics", color: "#7c3aed", hq: "Riyadh, Saudi Arabia" },
+  { ats: "ashby", board: "leantech", slug: "lean-technologies", industry: "Fintech / Open banking", about: "Open banking and payment infrastructure for the Middle East.", name: "Lean Technologies", color: "#0f172a", hq: "Riyadh, Saudi Arabia" },
+  { ats: "greenhouse", board: "bybit", slug: "bybit", industry: "Crypto exchange", about: "Cryptocurrency exchange for spot and derivatives trading.", domain: "bybit.com", name: "Bybit", color: "#d97706", hq: "Dubai, UAE" },
+  { ats: "greenhouse", board: "binance", slug: "binance", industry: "Crypto exchange", about: "Large global cryptocurrency exchange and blockchain company.", domain: "binance.com", name: "Binance", color: "#ca8a04", hq: "Global" },
+  { ats: "greenhouse", board: "deliveroo", slug: "deliveroo", industry: "Food delivery", about: "Food and grocery delivery platform with a tech hub in India.", domain: "deliveroo.com", name: "Deliveroo", color: "#0d9488", hq: "London, UK" },
+  { ats: "greenhouse", board: "coinbase", slug: "coinbase", industry: "Crypto exchange", about: "Cryptocurrency exchange and financial infrastructure company.", domain: "coinbase.com", name: "Coinbase", color: "#2563eb", hq: "Remote" },
+  { ats: "greenhouse", board: "inmobi", slug: "inmobi", industry: "Advertising technology", about: "Mobile advertising and marketing technology company.", domain: "inmobi.com", name: "InMobi", color: "#db2777", hq: "Bengaluru, India" },
+  { ats: "smartrecruiters", board: "Freshworks", slug: "freshworks", industry: "SaaS", about: "Customer and employee engagement software.", domain: "freshworks.com", name: "Freshworks", color: "#ea580c", hq: "San Mateo, USA" },
+  { ats: "smartrecruiters", board: "Swiggy", slug: "swiggy", industry: "Food delivery", about: "Food and grocery delivery platform in India.", domain: "swiggy.com", name: "Swiggy", color: "#f97316", hq: "Bengaluru, India" },
+  { ats: "lever", board: "zeta", slug: "zeta", industry: "Banking technology", about: "Cloud-native banking and payments technology for banks.", domain: "zeta.tech", name: "Zeta", color: "#7e22ce", hq: "Bengaluru, India" },
+  { ats: "lever", board: "paytm", slug: "paytm", industry: "Fintech / Payments", about: "Digital payments and financial services company in India.", domain: "paytm.com", name: "Paytm", color: "#0284c7", hq: "Noida, India" },
+  { ats: "greenhouse", board: "thoughtworks", slug: "thoughtworks", domain: "thoughtworks.com", name: "Thoughtworks", color: "#be123c", hq: "Chicago, USA", industry: "Technology consulting", about: "Global software consultancy that builds products for large organisations." },
+  { ats: "greenhouse", board: "mongodb", slug: "mongodb", domain: "mongodb.com", name: "MongoDB", color: "#15803d", hq: "New York, USA", industry: "Databases", about: "Company behind the MongoDB document database and Atlas cloud service." },
+  { ats: "greenhouse", board: "gitlab", slug: "gitlab", domain: "gitlab.com", name: "GitLab", color: "#ea580c", hq: "Remote", industry: "Developer tools", about: "DevSecOps platform for building, securing and shipping software." },
+  { ats: "greenhouse", board: "databricks", slug: "databricks", domain: "databricks.com", name: "Databricks", color: "#dc2626", hq: "San Francisco, USA", industry: "Data and AI", about: "Data and AI platform built around the lakehouse architecture." },
+  { ats: "greenhouse", board: "stripe", slug: "stripe", domain: "stripe.com", name: "Stripe", color: "#4f46e5", hq: "San Francisco, USA", industry: "Fintech / Payments", about: "Payments and financial infrastructure for internet businesses." },
+  { ats: "greenhouse", board: "twilio", slug: "twilio", domain: "twilio.com", name: "Twilio", color: "#e11d48", hq: "San Francisco, USA", industry: "Communications APIs", about: "Cloud APIs for messaging, voice and customer engagement." },
+  { ats: "ashby", board: "snowflake", slug: "snowflake", domain: "snowflake.com", name: "Snowflake", color: "#0284c7", hq: "Bozeman, USA", industry: "Data and AI", about: "Cloud data platform for storing, sharing and analysing data." },
+  { ats: "smartrecruiters", board: "endava", slug: "endava", domain: "endava.com", name: "Endava", color: "#ea580c", hq: "London, UK", industry: "Technology consulting", about: "Technology services company focused on digital transformation." },
+  { ats: "greenhouse", board: "turing", slug: "turing", domain: "turing.com", name: "Turing", color: "#2563eb", hq: "Palo Alto, USA", industry: "AI / Talent platform", about: "AI company that also matches developers with remote roles." },
+  { ats: "lever", board: "mindtickle", slug: "mindtickle", domain: "mindtickle.com", name: "Mindtickle", color: "#7c3aed", hq: "San Francisco, USA", industry: "SaaS", about: "Revenue enablement platform for sales teams." },
+  { ats: "greenhouse", board: "druva", slug: "druva", domain: "druva.com", name: "Druva", color: "#0369a1", hq: "Santa Clara, USA", industry: "Data security", about: "Cloud platform for data protection and backup." },
+  { ats: "smartrecruiters", board: "wise", slug: "wise", domain: "wise.com", name: "Wise", color: "#65a30d", hq: "London, UK", industry: "Fintech / Payments", about: "International money transfer and multi-currency accounts." },
+  { ats: "greenhouse", board: "agoda", slug: "agoda", domain: "agoda.com", name: "Agoda", color: "#2563eb", hq: "Singapore", industry: "Travel technology", about: "Online travel platform for hotels and flights." },
+  { ats: "greenhouse", board: "airbnb", slug: "airbnb", domain: "airbnb.com", name: "Airbnb", color: "#e11d48", hq: "San Francisco, USA", industry: "Travel technology", about: "Marketplace for stays and experiences." },
+  { ats: "greenhouse", board: "elastic", slug: "elastic", domain: "elastic.co", name: "Elastic", color: "#0891b2", hq: "Remote", industry: "Search and observability", about: "Company behind Elasticsearch, for search, observability and security." },
 ];
+
+// Older postings are usually stale even if still listed. Matches validThrough in the job page's JSON-LD.
+const MAX_AGE_DAYS = 60;
 
 const BOARD_URL = {
   greenhouse: (b) => `https://boards.greenhouse.io/${b}`,
   lever: (b) => `https://jobs.lever.co/${b}`,
   ashby: (b) => `https://jobs.ashbyhq.com/${b}`,
+  smartrecruiters: (b) => `https://jobs.smartrecruiters.com/${b}`,
+  workable: (b) => `https://apply.workable.com/${b}`,
 };
 
 const PLACES = [
@@ -45,7 +81,7 @@ const CATEGORIES = [
   ["backend", /\b(back[- ]?end|full[- ]?stack|software (engineer|developer)|sde|engineering manager|java|golang|node\.?js|\.net|python developer)\b/i],
 ];
 
-const NON_TECH = /\b(sales|marketing|recruit\w*|talent|legal|finance|account(ant|ing)|customer success|business development|hr|human resources)\b/i;
+const NON_TECH = /\b(sales|marketing|recruit\w*|talent|legal|finance|account(ant|ing)|customer success|business development|hr|human resources|martech|regional security)\b/i;
 
 const TAGS = ["React", "Next.js", "TypeScript", "JavaScript", "Node.js", "Python", "Java", "Kotlin", "Swift", "Go", "Rust", ".NET", "C#", "Flutter", "Android", "iOS", "AWS", "Azure", "GCP", "Kubernetes", "Docker", "Terraform", "Kafka", "PostgreSQL", "MySQL", "MongoDB", "Redis", "Spark", "Databricks", "PyTorch", "TensorFlow", "LLM", "SQL", "SAP", "Selenium", "Cypress"];
 const tagRe = (t) => new RegExp(`(^|[^a-z0-9+#.])${t.replace(/[.+#]/g, "\\$&")}($|[^a-z0-9+#])`, t === "Go" ? "" : "i");
@@ -55,6 +91,8 @@ const toText = (html = "") => html
   .replace(/<\/(p|div|h[1-6]|ul|ol)>|<br\s*\/?>/gi, "\n").replace(/<li[^>]*>/gi, "- ")
   .replace(/<\/li>/gi, "\n").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/\n{3,}/g, "\n\n").trim();
 
+const CITY_ALIAS = { Bangalore: "Bengaluru", Gurgaon: "Gurugram" };
+
 function seniorityOf(title) {
   if (/\b(intern|graduate|trainee)\b/i.test(title)) return "intern";
   if (/\b(junior|jr\.?|associate)\b/i.test(title)) return "junior";
@@ -63,11 +101,21 @@ function seniorityOf(title) {
   return "mid";
 }
 
-function placeOf(location) {
+// "Remote - Canada" is not open to someone in Dubai, so only unrestricted or regional remote counts.
+function isOpenRemote(location, remote) {
+  if (!remote && !/\bremote\b/i.test(location)) return false;
+  const rest = location.replace(/\b(fully|remote)\b|[-,–()]/gi, "").trim();
+  return !rest || /^(global|worldwide|anywhere|mena|middle east|gcc)$/i.test(rest);
+}
+
+function placeOf(location, remote) {
   for (const [country, re, cities] of PLACES) {
-    if (re.test(location)) return { country, city: cities.find((c) => new RegExp(`\\b${c}\\b`, "i").test(location)) };
+    if (re.test(location)) {
+      const city = cities.find((c) => new RegExp(`\\b${c}\\b`, "i").test(location));
+      return { country, city: CITY_ALIAS[city] ?? city };
+    }
   }
-  return /\bremote\b/i.test(location) && !/\b(us|usa|europe|emea|uk|latam)\b/i.test(location) ? { country: "REMOTE" } : null;
+  return isOpenRemote(location, remote) ? { country: "REMOTE" } : null;
 }
 
 const fetchers = {
@@ -94,6 +142,34 @@ const fetchers = {
       postedAt: j.publishedAt, workplace: j.workplaceType, remote: j.isRemote, description: j.descriptionPlain ?? toText(j.descriptionHtml),
     }));
   },
+  async smartrecruiters(board) {
+    const base = `https://api.smartrecruiters.com/v1/companies/${board}/postings`;
+    const list = [];
+    for (let offset = 0; ; offset += 100) {
+      const page = await getJson(`${base}?limit=100&offset=${offset}`);
+      list.push(...page.content);
+      if (!page.content.length || list.length >= page.totalFound) break;
+    }
+    const located = list.map((j) => ({ ...j, place: [j.location?.city, COUNTRY_NAME[j.location?.country] ?? j.location?.country].filter(Boolean).join(", ") }));
+    // Descriptions need one request per job, so fetch them only for jobs that will be kept.
+    const wanted = located.filter((j) => isTech(j.name) && placeOf(j.place, j.location?.remote));
+    const raw = [];
+    for (const j of wanted) {
+      const full = await getJson(`${base}/${j.id}`);
+      raw.push({
+        sourceId: j.id, title: j.name, location: j.place, url: full.postingUrl, postedAt: j.releasedDate, remote: j.location?.remote,
+        description: Object.values(full.jobAd?.sections ?? {}).map((s) => `${s.title ?? ""}\n${toText(s.text)}`).join("\n\n"),
+      });
+    }
+    return Object.assign(raw, { listed: list.length });
+  },
+  async workable(board) {
+    const { jobs } = await getJson(`https://apply.workable.com/api/v1/widget/accounts/${board}?details=true`);
+    return jobs.map((j) => ({
+      sourceId: j.shortcode, title: j.title, location: [j.city, j.state, j.country].filter(Boolean).join(", "), url: j.url,
+      postedAt: j.published_on ?? j.created_at, remote: j.telecommuting, description: toText(j.description),
+    }));
+  },
 };
 
 function leverSalary(r) {
@@ -107,12 +183,17 @@ async function getJson(url) {
   return res.json();
 }
 
+const COUNTRY_NAME = { ae: "United Arab Emirates", sa: "Saudi Arabia", qa: "Qatar", kw: "Kuwait", om: "Oman", bh: "Bahrain", in: "India" };
+const categoryOf = (title) => (NON_TECH.test(title) ? undefined : CATEGORIES.find(([, re]) => re.test(title))?.[0]);
+const isTech = (title) => !!categoryOf(title);
+
 function toJob(raw, source) {
-  const category = NON_TECH.test(raw.title) ? undefined : CATEGORIES.find(([, re]) => re.test(raw.title))?.[0];
-  const place = placeOf(raw.location) ?? (raw.remote ? { country: "REMOTE" } : null);
+  const category = categoryOf(raw.title);
+  const place = placeOf(raw.location, raw.remote);
   // Without a real link or date the job cannot be traced to its source, so it is not published.
   if (!category || !place || !raw.url || !raw.postedAt) return null;
-  const workplace = `${raw.workplace ?? ""} ${raw.location}`;
+  if (Date.now() - new Date(raw.postedAt).getTime() > MAX_AGE_DAYS * 864e5) return null;
+  const workplace = `${raw.workplace ?? ""} ${raw.location} ${raw.title}`;
   return {
     id: `${source.ats}-${source.board}-${raw.sourceId}`,
     source: source.ats, sourceId: String(raw.sourceId),
@@ -129,6 +210,9 @@ function toJob(raw, source) {
   };
 }
 
+// Only the link is stored: the browser loads the icon, and nothing is downloaded here.
+const logoUrl = (domain) => `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+
 const args = process.argv.slice(2);
 const dryRun = args.includes("--dry-run");
 const removeDemo = args.includes("--remove-demo");
@@ -143,12 +227,35 @@ if (!dryRun) {
   db = getFirestore(initializeApp({ credential: applicationDefault(), projectId: "techgulf-jobs" }));
 }
 
+// A source without these would show an empty company card, so stop before touching anything.
+const incomplete = SOURCES.filter((s) => !s.industry || !s.about).map((s) => s.slug);
+if (incomplete.length) throw new Error(`Add industry and about to SOURCES: ${incomplete.join(", ")}`);
+
+// Written together and first, so a failed source or an interrupted run cannot leave companies incomplete.
+if (db) {
+  const batch = db.batch();
+  for (const source of sources) {
+    batch.set(db.collection("companies").doc(source.slug), {
+      slug: source.slug, name: source.name, color: source.color, hq: source.hq,
+      industry: source.industry, about: source.about,
+      ats: source.ats, careersUrl: BOARD_URL[source.ats](source.board),
+      // No domain means no usable icon, so the company keeps its letter avatar.
+      ...(source.domain && { logo: logoUrl(source.domain) }),
+    }, { merge: true });
+  }
+  await batch.commit();
+  console.log(`Updated ${sources.length} companies`);
+}
+
 let failed = 0;
+let total = 0;
 for (const source of sources) {
   try {
     const raw = await fetchers[source.ats](source.board);
-    const jobs = raw.map((r) => toJob(r, source)).filter(Boolean);
-    console.log(`${source.name}: ${raw.length} fetched, ${jobs.length} kept`);
+    // One posting listed in several cities has one id, so keep it once.
+    const jobs = [...new Map(raw.map((r) => toJob(r, source)).filter(Boolean).map((j) => [j.id, j])).values()];
+    console.log(`${source.name}: ${raw.listed ?? raw.length} fetched, ${jobs.length} kept`);
+    total += jobs.length;
 
     if (dryRun) {
       for (const j of jobs.slice(0, 3)) console.log(`  [${j.category}/${j.country}/${j.city ?? "-"}/${j.mode}] ${j.title}\n    ${j.applyUrl}`);
@@ -156,28 +263,39 @@ for (const source of sources) {
     }
 
     const writer = db.bulkWriter();
-    writer.set(db.collection("companies").doc(source.slug), {
-      slug: source.slug, name: source.name, color: source.color, hq: source.hq,
-      ats: source.ats, careersUrl: BOARD_URL[source.ats](source.board),
-    }, { merge: true });
     for (const j of jobs) writer.set(db.collection("jobs").doc(j.id), j);
 
-    // An empty response may be an API fault, so only a non-empty result can close jobs.
-    let closed = 0;
-    if (raw.length) {
+    // An empty response may be an API fault, so only a non-empty result can delete jobs.
+    let deleted = 0;
+    if (raw.listed ?? raw.length) {
       const live = new Set(jobs.map((j) => j.id));
       const existing = await db.collection("jobs").where("companySlug", "==", source.slug).where("synced", "==", true).get();
       for (const doc of existing.docs) {
-        if (!live.has(doc.id) && doc.get("status") === "active") { writer.update(doc.ref, { status: "closed" }); closed++; }
+        if (!live.has(doc.id)) { writer.delete(doc.ref); deleted++; }
       }
     }
     await writer.close();
-    if (closed) console.log(`  closed ${closed} jobs no longer listed`);
+    if (deleted) console.log(`  deleted ${deleted} jobs that expired or left the board`);
   } catch (err) {
     failed++;
     console.error(`${source.name}: FAILED, existing jobs left untouched. ${err.message}`);
   }
 }
+
+// A company dropped from SOURCES is no longer refreshed, so nothing else would ever remove its jobs.
+if (db && !only) {
+  const known = new Set(SOURCES.map((s) => s.slug));
+  const synced = await db.collection("jobs").where("synced", "==", true).select("companySlug").get();
+  const orphans = synced.docs.filter((d) => !known.has(d.get("companySlug")));
+  if (orphans.length) {
+    const writer = db.bulkWriter();
+    for (const d of orphans) writer.delete(d.ref);
+    await writer.close();
+    console.log(`Deleted ${orphans.length} jobs from companies no longer in SOURCES`);
+  }
+}
+
+console.log(`Done: ${total} jobs kept from ${sources.length - failed}/${sources.length} sources`);
 
 if (removeDemo) {
   if (dryRun) console.log("--remove-demo ignored in dry run");

@@ -9,7 +9,7 @@
     "lint": "eslint",
     "seed": "node scripts/seed-firestore.mjs",
     "seed:content": "node --env-file-if-exists=.env scripts/seed-content.mjs",
-    "sync:jobs": "node scripts/sync-jobs.mjs",
+    "sync:jobs": "node --env-file-if-exists=.env scripts/sync-jobs.mjs",
     "sync:salaries": "node --env-file-if-exists=.env scripts/sync-salaries.mjs"
   },
   "dependencies": {

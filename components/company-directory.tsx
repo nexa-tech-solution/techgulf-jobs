@@ -27,7 +27,7 @@ export function CompanyDirectory({ d, lang, items }: { d: Dict; lang: Locale; it
   const c = d.companiesPage;
 
   const countries = [...new Set(items.map((i) => i.country))];
-  const industries = [...new Set(items.map((i) => i.company.industry))].sort();
+  const industries = [...new Set(items.map((i) => i.company.industry).filter(Boolean))].sort();
 
   const list = useMemo(() => {
     const t = q.trim().toLowerCase();
@@ -87,10 +87,10 @@ export function CompanyDirectory({ d, lang, items }: { d: Dict; lang: Locale; it
 
             <p className="mt-3 line-clamp-2 min-h-10 text-sm text-muted" dir="auto">{i.company.about}</p>
 
-            <dl className="mt-4 grid grid-cols-3 divide-x divide-line rounded-xl bg-surface-2 py-2.5 text-center rtl:divide-x-reverse">
+            <dl className={`mt-4 grid ${i.company.size ? "grid-cols-3" : "grid-cols-2"} divide-x divide-line rounded-xl bg-surface-2 py-2.5 text-center rtl:divide-x-reverse`}>
               <div><dt className="text-[11px] text-muted">{c.openRoles}</dt><dd className="text-lg font-semibold tabular-nums">{i.open}</dd></div>
               <div><dt className="text-[11px] text-muted">{c.salaryShown}</dt><dd className="text-lg font-semibold tabular-nums" dir="ltr">{i.salaryPct}%</dd></div>
-              <div><dt className="text-[11px] text-muted">{c.size}</dt><dd className="truncate px-1 pt-1 text-sm font-semibold" dir="ltr">{i.company.size}</dd></div>
+              {i.company.size && <div><dt className="text-[11px] text-muted">{c.size}</dt><dd className="truncate px-1 pt-1 text-sm font-semibold" dir="ltr">{i.company.size}</dd></div>}
             </dl>
 
             <div className="mt-4 flex flex-wrap gap-1.5">
@@ -99,7 +99,7 @@ export function CompanyDirectory({ d, lang, items }: { d: Dict; lang: Locale; it
 
             <div className="flex-1" />
             <div className="mt-4 flex items-center justify-between border-t border-line pt-3 text-sm">
-              <span className="truncate text-muted">{[...i.cities].slice(0, 3).join(" · ") || d.country.REMOTE}{i.remote && ` · ${d.mode.remote}`}</span>
+              <span className="truncate text-muted">{[...i.cities.slice(0, 3), ...(i.remote ? [d.mode.remote] : [])].join(" · ") || i.company.hq}</span>
               <span className="inline-flex shrink-0 items-center gap-1 font-medium text-primary">{c.viewJobs} <ArrowIcon /></span>
             </div>
           </Link>

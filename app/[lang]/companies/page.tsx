@@ -24,7 +24,8 @@ function stats(companies: Company[], allJobs: Job[]): CompanyStats[] {
       tags: [...tagCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([t]) => t),
       cities: [...new Set(jobs.map((j) => j.city).filter(Boolean) as string[])],
     };
-  });
+    // A directory card with nothing to apply for is a dead end.
+  }).filter((i) => i.open > 0);
 }
 
 export default async function Companies(props: PageProps<"/[lang]/companies">) {

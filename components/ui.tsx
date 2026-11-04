@@ -16,7 +16,14 @@ export function Tag({ children }: { children: React.ReactNode }) {
   return <span dir="ltr" className="rounded-md border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[11px] text-muted">{children}</span>;
 }
 
-export function Logo({ company, size = 40 }: { company: Pick<Company, "name" | "color">; size?: number }) {
+export function Logo({ company, size = 40 }: { company: Pick<Company, "name" | "color"> & { logo?: string }; size?: number }) {
+  if (company.logo) return (
+    // White plate: many icons are transparent and would vanish in dark mode.
+    <span className="grid shrink-0 place-items-center overflow-hidden rounded-lg border border-line bg-white" style={{ width: size, height: size }} aria-hidden>
+      {/* eslint-disable-next-line @next/next/no-img-element -- small remote icon, validated by the job sync */}
+      <img src={company.logo} alt="" loading="lazy" referrerPolicy="no-referrer" className="h-[80%] w-[80%] object-contain" />
+    </span>
+  );
   return (
     <span
       className="grid shrink-0 place-items-center rounded-lg font-semibold text-white"

@@ -47,7 +47,7 @@ async function CompanyContent({ params }: Pick<PageProps<"/[lang]/companies/[slu
   const c = catalog.companies.find((x) => x.slug === slug);
   if (!c) notFound();
   const jobs = catalog.jobs.filter((j) => j.companySlug === slug);
-  const facts: [string, string][] = [[d.industry, c.industry], [d.hq, c.hq], [d.employees, c.size], [d.ats, c.ats]];
+  const facts: [string, string][] = [[d.industry, c.industry], [d.hq, c.hq], [d.employees, c.size], [d.ats, c.ats]].filter(([, v]) => v) as [string, string][];
   return (
     <>
       <div className="border-b border-line">

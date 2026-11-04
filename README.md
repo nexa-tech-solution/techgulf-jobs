@@ -36,4 +36,25 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 
+## Update jobs daily
+
+Run this from the project root:
+
+```bash
+GOOGLE_APPLICATION_CREDENTIALS=~/.config/techgulf/service-account.json npm run sync:jobs
+```
+
+Each run adds new jobs and deletes jobs that left the employer's board, are older than `MAX_AGE_DAYS` (60 days), or belong to a company removed from `SOURCES`. Both settings are in `scripts/sync-jobs.mjs`. New jobs can take up to about 5 minutes to appear on the site.
+
+Preview without writing anything:
+
+```bash
+npm run sync:jobs -- --dry-run
+```
+
+To also delete demo jobs (any job not created by this script), once only:
+
+```bash
 GOOGLE_APPLICATION_CREDENTIALS=~/.config/techgulf/service-account.json npm run sync:jobs -- --remove-demo
+```
+

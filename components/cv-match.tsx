@@ -100,7 +100,7 @@ export function CvMatch({ d, lang, jobs }: { d: Dict; lang: Locale; jobs: Job[] 
         </div>
         <ul className="mt-4 space-y-3">
           {top.map(({ j, score, have, missing }) => {
-            const c = { name: j.company, color: j.companyColor ?? "#64748b" };
+            const c = { name: j.company, color: j.companyColor ?? "#64748b", logo: j.companyLogo };
             return (
               <li key={j.id} className="rounded-2xl border border-line bg-surface p-4 transition hover:border-ink/25 md:p-5">
                 <div className="flex gap-4">
