@@ -8,6 +8,9 @@ import { JobCard } from "@/components/job-card";
 import { Logo } from "@/components/ui";
 import { ExternalIcon } from "@/components/icons";
 
+// Allowed to block: the check before Suspense is what returns a real 404.
+export const instant = false;
+
 export async function generateMetadata(props: PageProps<"/[lang]/companies/[slug]">): Promise<Metadata> {
   const { lang, slug } = await props.params;
   const { jobs, companies } = await getCatalog();

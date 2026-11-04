@@ -8,6 +8,9 @@ import { getDict, type Locale } from "@/lib/i18n";
 import { CareerBlockView, GuideCover } from "@/components/career-guides";
 import { BackIcon } from "@/components/icons";
 
+// Allowed to block: the check before Suspense is what returns a real 404.
+export const instant = false;
+
 export async function generateMetadata(props: PageProps<"/[lang]/guides/[slug]">): Promise<Metadata> {
   const { lang, slug } = await props.params;
   const guide = (await getGuidesContent(lang))?.career?.find((g) => g.slug === slug);

@@ -10,6 +10,9 @@ import { orSample, pageMeta } from "@/lib/seo";
 import { Tag } from "@/components/ui";
 import { BackIcon } from "@/components/icons";
 
+// Allowed to block: the check before Suspense is what returns a real 404.
+export const instant = false;
+
 export async function generateMetadata(props: PageProps<"/[lang]/blog/[slug]">): Promise<Metadata> {
   const { lang, slug } = await props.params;
   const post = (await getPosts()).find((p) => p.slug === slug);

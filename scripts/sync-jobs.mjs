@@ -44,6 +44,30 @@ const SOURCES = [
   { ats: "greenhouse", board: "agoda", slug: "agoda", domain: "agoda.com", name: "Agoda", color: "#2563eb", hq: "Singapore", industry: "Travel technology", about: "Online travel platform for hotels and flights." },
   { ats: "greenhouse", board: "airbnb", slug: "airbnb", domain: "airbnb.com", name: "Airbnb", color: "#e11d48", hq: "San Francisco, USA", industry: "Travel technology", about: "Marketplace for stays and experiences." },
   { ats: "greenhouse", board: "elastic", slug: "elastic", domain: "elastic.co", name: "Elastic", color: "#0891b2", hq: "Remote", industry: "Search and observability", about: "Company behind Elasticsearch, for search, observability and security." },
+  { ats: "greenhouse", board: "rubrik", slug: "rubrik", domain: "rubrik.com", name: "Rubrik", color: "#0d9488", hq: "Palo Alto, USA", industry: "Data security", about: "Cloud data protection and cyber resilience platform." },
+  { ats: "greenhouse", board: "okta", slug: "okta", domain: "okta.com", name: "Okta", color: "#1d4ed8", hq: "San Francisco, USA", industry: "Identity and security", about: "Identity platform for securing workforce and customer logins." },
+  { ats: "greenhouse", board: "sumologic", slug: "sumo-logic", domain: "sumologic.com", name: "Sumo Logic", color: "#1e40af", hq: "Redwood City, USA", industry: "Observability", about: "Log analytics platform for reliability and security teams." },
+  { ats: "ashby", board: "cohere", slug: "cohere", domain: "cohere.com", name: "Cohere", color: "#6d28d9", hq: "Toronto, Canada", industry: "Data and AI", about: "Enterprise AI models and tools for search and text generation." },
+  { ats: "ashby", board: "openai", slug: "openai", domain: "openai.com", name: "OpenAI", color: "#0f766e", hq: "San Francisco, USA", industry: "Data and AI", about: "AI research company behind ChatGPT and the OpenAI API." },
+  { ats: "lever", board: "nium", slug: "nium", domain: "nium.com", name: "Nium", color: "#7c3aed", hq: "Singapore", industry: "Fintech / Payments", about: "Global payments infrastructure for banks and businesses." },
+  { ats: "greenhouse", board: "samsara", slug: "samsara", domain: "samsara.com", name: "Samsara", color: "#2563eb", hq: "San Francisco, USA", industry: "Industrial IoT", about: "Connected operations platform for fleets and physical industries." },
+  { ats: "greenhouse", board: "hackerrank", slug: "hackerrank", domain: "hackerrank.com", name: "HackerRank", color: "#15803d", hq: "Santa Clara, USA", industry: "Developer tools", about: "Coding assessments and technical hiring platform." },
+  { ats: "smartrecruiters", board: "grab", slug: "grab", domain: "grab.com", name: "Grab", color: "#16a34a", hq: "Singapore", industry: "Super-app / Mobility", about: "Super-app for rides, deliveries and payments in Southeast Asia." },
+  { ats: "greenhouse", board: "toast", slug: "toast", domain: "toasttab.com", name: "Toast", color: "#ea580c", hq: "Boston, USA", industry: "Restaurant SaaS", about: "Point-of-sale and management platform for restaurants." },
+  { ats: "greenhouse", board: "starburst", slug: "starburst", domain: "starburst.io", name: "Starburst", color: "#0284c7", hq: "Boston, USA", industry: "Data and AI", about: "Data analytics platform built on the Trino query engine." },
+  { ats: "greenhouse", board: "singlestore", slug: "singlestore", domain: "singlestore.com", name: "SingleStore", color: "#9333ea", hq: "San Francisco, USA", industry: "Databases", about: "Distributed SQL database for real-time applications." },
+  { ats: "ashby", board: "clickhouse", slug: "clickhouse", domain: "clickhouse.com", name: "ClickHouse", color: "#ca8a04", hq: "San Francisco, USA", industry: "Databases", about: "Open-source column-oriented database for analytics." },
+  { ats: "greenhouse", board: "fivetran", slug: "fivetran", domain: "fivetran.com", name: "Fivetran", color: "#2563eb", hq: "Oakland, USA", industry: "Data and AI", about: "Automated data movement into warehouses and lakes." },
+  { ats: "greenhouse", board: "purestorage", slug: "pure-storage", domain: "purestorage.com", name: "Pure Storage", color: "#ea580c", hq: "Santa Clara, USA", industry: "Data storage", about: "All-flash data storage hardware and software." },
+  { ats: "greenhouse", board: "zscaler", slug: "zscaler", domain: "zscaler.com", name: "Zscaler", color: "#0369a1", hq: "San Jose, USA", industry: "Cybersecurity", about: "Cloud security platform built on zero trust access." },
+  { ats: "greenhouse", board: "commvault", slug: "commvault", domain: "commvault.com", name: "Commvault", color: "#4f46e5", hq: "Tinton Falls, USA", industry: "Data security", about: "Data protection and recovery across cloud and on-premises systems." },
+  { ats: "smartrecruiters", board: "servicenow", slug: "servicenow", domain: "servicenow.com", name: "ServiceNow", color: "#15803d", hq: "Santa Clara, USA", industry: "SaaS", about: "Cloud platform for automating IT and business workflows." },
+  { ats: "greenhouse", board: "payoneer", slug: "payoneer", domain: "payoneer.com", name: "Payoneer", color: "#ea580c", hq: "New York, USA", industry: "Fintech / Payments", about: "Cross-border payments for businesses and freelancers." },
+  { ats: "greenhouse", board: "scaleai", slug: "scale-ai", domain: "scale.com", name: "Scale AI", color: "#4f46e5", hq: "San Francisco, USA", industry: "Data and AI", about: "Data and tooling for building and evaluating AI models." },
+  { ats: "greenhouse", board: "anthropic", slug: "anthropic", domain: "anthropic.com", name: "Anthropic", color: "#b45309", hq: "San Francisco, USA", industry: "Data and AI", about: "AI safety and research company behind Claude." },
+  { ats: "lever", board: "crypto", slug: "crypto-com", domain: "crypto.com", name: "Crypto.com", color: "#1e3a8a", hq: "Singapore", industry: "Crypto exchange", about: "Cryptocurrency exchange and payments app." },
+  { ats: "greenhouse", board: "jfrog", slug: "jfrog", domain: "jfrog.com", name: "JFrog", color: "#15803d", hq: "Sunnyvale, USA", industry: "Developer tools", about: "Software supply chain and artifact management platform." },
+  { ats: "ashby", board: "elevenlabs", slug: "elevenlabs", domain: "elevenlabs.io", name: "ElevenLabs", color: "#0f172a", hq: "New York, USA", industry: "Data and AI", about: "AI voice generation and audio tools." },
 ];
 
 // Older postings are usually stale even if still listed. Matches validThrough in the job page's JSON-LD.
@@ -81,7 +105,7 @@ const CATEGORIES = [
   ["backend", /\b(back[- ]?end|full[- ]?stack|software (engineer|developer)|sde|engineering manager|java|golang|node\.?js|\.net|python developer)\b/i],
 ];
 
-const NON_TECH = /\b(sales|marketing|recruit\w*|talent|legal|finance|account(ant|ing)|customer success|business development|hr|human resources|martech|regional security)\b/i;
+const NON_TECH = /\b(sales|account executive|account manager|marketing|recruit\w*|talent|legal|finance|account(ant|ing)|customer success|business development|hr|human resources|martech|regional security)\b/i;
 
 const TAGS = ["React", "Next.js", "TypeScript", "JavaScript", "Node.js", "Python", "Java", "Kotlin", "Swift", "Go", "Rust", ".NET", "C#", "Flutter", "Android", "iOS", "AWS", "Azure", "GCP", "Kubernetes", "Docker", "Terraform", "Kafka", "PostgreSQL", "MySQL", "MongoDB", "Redis", "Spark", "Databricks", "PyTorch", "TensorFlow", "LLM", "SQL", "SAP", "Selenium", "Cypress"];
 // "Go" must not match prose such as "Go-to-market" or "Go to".
@@ -180,8 +204,14 @@ function leverSalary(r) {
   return period && r.currency ? { min: r.min, max: r.max, currency: r.currency, period } : undefined;
 }
 
-async function getJson(url) {
+// Workable rate-limits after a few boards, so wait and retry rather than skip the company.
+async function getJson(url, retries = 4) {
   const res = await fetch(url, { signal: AbortSignal.timeout(30000) });
+  if (res.status === 429 && retries > 0) {
+    const wait = Number(res.headers.get("retry-after")) || 15 * (5 - retries);
+    await new Promise((resolve) => setTimeout(resolve, wait * 1000));
+    return getJson(url, retries - 1);
+  }
   if (!res.ok) throw new Error(`HTTP ${res.status} from ${url}`);
   return res.json();
 }

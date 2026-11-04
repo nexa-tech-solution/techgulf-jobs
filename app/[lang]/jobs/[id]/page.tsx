@@ -7,10 +7,15 @@ import { getCatalog } from "@/lib/catalog";
 import { SITE_URL, orSample, pageMeta, snippet } from "@/lib/seo";
 import { formatSalary, salaryConverted, timeAgo } from "@/lib/format";
 import { JobBadges, JobCard, jobPlace } from "@/components/job-card";
-import { Logo, Tag } from "@/components/ui";
+import { JobAnalysisView } from "@/components/job-analysis";
+import { analyzeJob } from "@/lib/job-analysis";
+import { Logo } from "@/components/ui";
 import { ReportButton, SaveButton } from "@/components/client";
 import { ApplyButton } from "@/components/account";
 import { BackIcon, ShareIcon, ShieldIcon } from "@/components/icons";
+
+// Allowed to block: checking the job before Suspense is what lets an expired job return a real 404.
+export const instant = false;
 
 export async function generateMetadata(props: PageProps<"/[lang]/jobs/[id]">): Promise<Metadata> {
   const { lang, id } = await props.params;
@@ -62,9 +67,10 @@ async function JobContent({ params }: Pick<PageProps<"/[lang]/jobs/[id]">, "para
     ...(job.salary && { baseSalary: { "@type": "MonetaryAmount", currency: job.salary.currency, value: { "@type": "QuantitativeValue", minValue: job.salary.min, maxValue: job.salary.max, unitText: job.salary.period === "month" ? "MONTH" : "YEAR" } } }),
   };
 
+  const { years } = analyzeJob(job.description, job.tags);
   const facts: [string, string][] = [
     [d.jobFacts.location, jobPlace(job, d)], [d.jobFacts.mode, d.mode[job.mode]], [d.jobFacts.level, d.level[job.seniority]],
-    [d.jobFacts.experience, job.experience ?? "—"], [d.jobFacts.field, d.category[job.category]], [d.jobFacts.posted, timeAgo(job.postedAt, new Date(now), d)],
+    [d.jobFacts.experience, job.experience ?? (years ? d.jobAnalysis.years.replace("{n}", years) : "—")], [d.jobFacts.field, d.category[job.category]], [d.jobFacts.posted, timeAgo(job.postedAt, new Date(now), d)],
   ];
 
   const ApplyBlock = (
@@ -101,13 +107,12 @@ async function JobContent({ params }: Pick<PageProps<"/[lang]/jobs/[id]">, "para
           <dl className="mt-5 grid grid-cols-2 gap-3 card p-4 sm:grid-cols-3">
             {facts.map(([k, v]) => <div key={k}><dt className="text-xs text-muted">{k}</dt><dd className="mt-0.5 text-sm font-medium" dir="auto">{v}</dd></div>)}
           </dl>
-          <div className="mt-3 flex flex-wrap gap-1.5">{job.tags.map((t) => <Tag key={t}>{t}</Tag>)}</div>
 
           <div className="mt-5 flex gap-3 rounded-xl border border-danger/30 bg-danger/5 p-4 text-sm text-danger">
             <ShieldIcon className="h-5 w-5 shrink-0" /><p>{d.scamWarn}</p>
           </div>
 
-          <section dir="ltr" lang="en" className="prose-job mt-6 whitespace-pre-line text-base">{job.description}</section>
+          <JobAnalysisView job={job} d={d} />
 
           <div className="mt-6 flex flex-wrap items-center gap-2 text-sm">
             <ShareIcon className="h-4 w-4 text-muted" /><span className="text-muted">{d.share}:</span>

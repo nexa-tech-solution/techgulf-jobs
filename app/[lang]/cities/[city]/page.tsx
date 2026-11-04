@@ -8,6 +8,9 @@ import { orSample, pageMeta } from "@/lib/seo";
 import { CATEGORIES } from "@/lib/format";
 import { JobCard } from "@/components/job-card";
 
+// Allowed to block: the check before Suspense is what returns a real 404.
+export const instant = false;
+
 export async function generateMetadata(props: PageProps<"/[lang]/cities/[city]">): Promise<Metadata> {
   const { lang, city } = await props.params;
   const { cities, jobs } = await getCatalog();
