@@ -21,4 +21,3 @@ export interface Post {
 
 export const BLOG_CATEGORIES: BlogCategory[] = ["ai", "dev", "security", "cloud", "career"];
 export const coverOf = (p: Post) => p.cover ?? `/blog/${p.slug}.jpg`;
-export const readMins = (p: Post) => Math.max(1, Math.round(p.body.join(" ").split(/\s+/).length / 200));

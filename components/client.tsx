@@ -18,6 +18,20 @@ export function SaveButton({ id, label, savedLabel, compact }: { id: string; lab
   );
 }
 
+/**
+ * Applies the saved theme before paint. A 404 or error makes React rebuild <html> on the client,
+ * where it cannot run scripts: the non-JS type avoids its warning, and the effect restores the theme.
+ */
+export function ThemeScript({ code }: { code: string }) {
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("tgj:theme");
+      if (saved) document.documentElement.dataset.theme = saved;
+    } catch { /* ignore */ }
+  });
+  return <script type={typeof window === "undefined" ? undefined : "application/json"} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: code }} />;
+}
+
 export function LangSwitch({ label }: { label: string }) {
   const path = usePathname();
   const target = path.startsWith("/ar") ? "en" : "ar";

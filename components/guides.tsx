@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { Dict } from "@/lib/i18n";
 import { TO_AED } from "@/lib/format";
 import type { GuidesContent, Region } from "@/lib/types";
+import { GuideCover } from "./career-guides";
 import { ShieldIcon } from "./icons";
 
 const usd = (n: number, cur: string) => n * (TO_AED[cur] ?? 1) * 0.2723;
@@ -14,7 +15,7 @@ const SEG = [
 ] as const;
 
 export function GuidesHub({ d, lang, content }: { d: Dict; lang: string; content: GuidesContent }) {
-  const { guides: GUIDES, journey: JOURNEY, cost: COST } = content;
+  const { career = [], guides: GUIDES, journey: JOURNEY, cost: COST } = content;
   const g = d.guidesPage;
   const [region, setRegion] = useState<Region | "">("");
   const list = GUIDES.filter((x) => !region || x.region === region);
@@ -24,8 +25,31 @@ export function GuidesHub({ d, lang, content }: { d: Dict; lang: string; content
 
   return (
     <div className="space-y-14">
+      {/* Career guides */}
+      {career.length > 0 && (
+        <section>
+          <h2 className="text-xl font-semibold tracking-tight">{g.careerTitle}</h2>
+          <p className="mt-1 text-sm text-muted">{g.careerSub}</p>
+          <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {career.map((x) => (
+              <li key={x.slug}>
+                <a href={`/${lang}/guides/${x.slug}`} className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface transition hover:border-ink/30">
+                  <div className="aspect-[32/14] border-b border-line"><GuideCover kind={x.cover} /></div>
+                  <div className="p-4 text-start">
+                    <h3 className="font-semibold leading-snug">{x.title}</h3>
+                    <p className="mt-1.5 text-sm text-muted">{x.summary}</p>
+                    <p className="mt-3 text-xs text-muted">{dateFmt(x.updated)}</p>
+                  </div>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* Guides */}
       <section>
+        <h2 className="mb-4 text-xl font-semibold tracking-tight">{g.movingTitle}</h2>
         <div className="flex gap-1 overflow-x-auto border-b border-line [scrollbar-width:none]" role="tablist">
           {regions.map(([k, label]) => (
             <button key={k || "all"} role="tab" aria-selected={region === k} onClick={() => setRegion(k)}
@@ -40,19 +64,17 @@ export function GuidesHub({ d, lang, content }: { d: Dict; lang: string; content
               <summary className="cursor-pointer list-none p-5">
                 <div className="flex items-center gap-2 text-xs text-muted">
                   <span className="rounded-md bg-surface-2 px-2 py-0.5 font-medium text-ink">{regions.find(([k]) => k === x.region)?.[1]}</span>
-                  <span>{g.minRead.replace("{n}", String(x.mins))}</span>
-                  <span aria-hidden>·</span>
                   <span>{g.updated} {dateFmt(x.updated)}</span>
                 </div>
                 <div className="mt-3 flex items-start justify-between gap-4">
-                  <div dir="ltr" lang="en" className="text-start">
+                  <div>
                     <h3 className="text-lg font-semibold leading-snug">{x.title}</h3>
                     <p className="mt-1.5 text-sm text-muted">{x.summary}</p>
                   </div>
                   <span className="mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-full border border-line text-muted transition group-open:rotate-45" aria-hidden>+</span>
                 </div>
               </summary>
-              <ol className="space-y-3 border-t border-line px-5 py-4" dir="ltr" lang="en">
+              <ol className="space-y-3 border-t border-line px-5 py-4">
                 {x.steps.map((s, i) => (
                   <li key={s} className="flex gap-3 text-sm">
                     <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{i + 1}</span>
@@ -69,11 +91,11 @@ export function GuidesHub({ d, lang, content }: { d: Dict; lang: string; content
       <section>
         <h2 className="text-xl font-semibold tracking-tight">{g.journeyTitle}</h2>
         <p className="mt-1 text-sm text-muted">{g.journeySub}</p>
-        <ol className="mt-6 grid gap-4 md:grid-cols-5" dir="ltr" lang="en">
+        <ol className="mt-6 grid gap-4 md:grid-cols-5">
           {JOURNEY.map((j, i) => (
             <li key={j.t} className="relative md:pt-8">
-              {i < JOURNEY.length - 1 && <span className="absolute left-3 top-3 hidden h-px w-full bg-line md:block" aria-hidden />}
-              <span className="absolute left-0 top-0 hidden h-6 w-6 place-items-center rounded-full border-2 border-primary bg-surface text-[11px] font-bold text-primary md:grid">{i + 1}</span>
+              {i < JOURNEY.length - 1 && <span className="absolute start-3 top-3 hidden h-px w-full bg-line md:block" aria-hidden />}
+              <span className="absolute start-0 top-0 hidden h-6 w-6 place-items-center rounded-full border-2 border-primary bg-surface text-[11px] font-bold text-primary md:grid">{i + 1}</span>
               <div className="rounded-xl border border-line bg-surface p-4 md:border-0 md:bg-transparent md:p-0">
                 <p className="text-xs font-medium text-primary">{j.s}</p>
                 <p className="mt-1 font-semibold">{j.t}</p>
@@ -85,7 +107,7 @@ export function GuidesHub({ d, lang, content }: { d: Dict; lang: string; content
       </section>
 
       {/* Cost vs salary */}
-      <section className="rounded-2xl border border-line bg-surface p-5 md:p-6">
+      {COST.length > 0 && <section className="rounded-2xl border border-line bg-surface p-5 md:p-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-xl font-semibold tracking-tight">{g.costTitle}</h2>
@@ -136,7 +158,7 @@ export function GuidesHub({ d, lang, content }: { d: Dict; lang: string; content
             </table>
           </div>
         </details>
-      </section>
+      </section>}
 
       <div className="flex gap-3 rounded-2xl border border-danger/25 bg-danger/5 p-5">
         <ShieldIcon className="h-6 w-6 shrink-0 text-danger" />

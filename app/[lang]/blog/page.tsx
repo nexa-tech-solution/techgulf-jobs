@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Suspense } from "react";
 import { getDict, type Locale } from "@/lib/i18n";
-import { BLOG_CATEGORIES, coverOf, readMins, type Post } from "@/lib/blog";
+import { BLOG_CATEGORIES, coverOf, type Post } from "@/lib/blog";
 import { getPosts } from "@/lib/catalog";
 import { PageHeader } from "@/components/ui";
 import type { Dict } from "@/lib/i18n";
@@ -18,7 +18,6 @@ function Meta({ p, d, lang }: { p: Post; d: Dict; lang: Locale }) {
       <span className="font-semibold uppercase tracking-wide text-primary">{d.blogPage.cat[p.category]}</span>
       {p.hot && <span className="rounded bg-red-500/10 px-1.5 py-0.5 font-semibold text-red-600 dark:text-red-400">{d.blogPage.hot}</span>}
       <span aria-hidden>·</span><span>{fmt(p.date, lang)}</span>
-      <span aria-hidden>·</span><span>{d.blogPage.minRead.replace("{n}", String(readMins(p)))}</span>
     </div>
   );
 }

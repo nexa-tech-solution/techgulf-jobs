@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getDict, type Locale } from "@/lib/i18n";
-import { coverOf, readMins } from "@/lib/blog";
+import { coverOf } from "@/lib/blog";
 import { getPosts } from "@/lib/catalog";
 import { Tag } from "@/components/ui";
 import { BackIcon } from "@/components/icons";
@@ -41,7 +41,6 @@ async function PostBody({ params }: { params: PageProps<"/[lang]/blog/[slug]">["
           <span className="font-semibold uppercase tracking-wide text-primary">{d.blogPage.cat[post.category]}</span>
           {post.hot && <span className="rounded bg-red-500/10 px-1.5 py-0.5 font-semibold text-red-600 dark:text-red-400">{d.blogPage.hot}</span>}
           <span aria-hidden>·</span><span>{date}</span>
-          <span aria-hidden>·</span><span>{d.blogPage.minRead.replace("{n}", String(readMins(post)))}</span>
         </div>
         <div dir="ltr" lang="en" className="text-start">
           <h1 className="mt-3 text-[28px] font-bold leading-tight tracking-tight md:text-[38px]">{post.title}</h1>

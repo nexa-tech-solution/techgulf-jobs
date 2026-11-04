@@ -38,7 +38,18 @@ export interface MarketData {
 }
 
 export type Region = "UAE" | "KSA" | "QA" | "IN";
-export interface Guide { region: Region; title: string; summary: string; mins: number; updated: string; steps: string[] }
+export interface Guide { region: Region; title: string; summary: string; updated: string; steps: string[] }
 export interface JourneyStep { t: string; s: string; d: string }
 export interface CostRow { city: string; cur: string; rent: number; transport: number; food: number; salary: number }
-export interface GuidesContent { guides: Guide[]; journey: JourneyStep[]; cost: CostRow[] }
+export type CareerCover = "jd" | "cv" | "apply" | "interview" | "salary" | "offer";
+export type CareerBlock =
+  | { type: "flow"; title: string; note?: string; items: { t: string; d: string }[] }
+  | { type: "annotated"; title: string; doc: string; lines: { text: string; note: string; tone: "good" | "info" | "bad" }[] }
+  | { type: "compare"; title: string; badLabel: string; goodLabel: string; bad: string[]; good: string[] }
+  | { type: "formula"; title: string; parts: string[]; example: string }
+  | { type: "stack"; title: string; note?: string; segments: { label: string; weight: number; note: string }[] }
+  | { type: "checklist"; title: string; items: string[] }
+  | { type: "message"; title: string; lines: string[] }
+  | { type: "tip"; text: string };
+export interface CareerGuide { slug: string; cover: CareerCover; title: string; summary: string; updated: string; blocks: CareerBlock[] }
+export interface GuidesContent { career?: CareerGuide[]; guides: Guide[]; journey: JourneyStep[]; cost: CostRow[] }

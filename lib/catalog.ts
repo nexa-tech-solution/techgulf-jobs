@@ -53,10 +53,13 @@ export async function getPosts(): Promise<Post[]> {
     .sort((a, b) => b.date.localeCompare(a.date));
 }
 
-export async function getGuidesContent(): Promise<GuidesContent | null> {
+export async function getGuidesContent(lang: string): Promise<GuidesContent | null> {
   "use cache";
   cacheLife({ stale: 300, revalidate: 3600, expire: 86400 });
 
-  const snap = await getDoc(doc(getFirestore(app), "content", "guides"));
-  return snap.exists() ? (snap.data() as GuidesContent) : null;
+  const db = getFirestore(app);
+  const snap = lang === "ar" ? await getDoc(doc(db, "content", "guides_ar")) : null;
+  // English is the fallback until a translation is published.
+  const used = snap?.exists() ? snap : await getDoc(doc(db, "content", "guides"));
+  return used.exists() ? (used.data() as GuidesContent) : null;
 }
