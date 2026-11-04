@@ -1,7 +1,8 @@
 import { cacheLife } from "next/cache";
 import { collection, doc, getDoc, getDocs, getFirestore, query, where } from "firebase/firestore";
 import { app } from "./firebase";
-import type { City, Company, Job, MarketData } from "./types";
+import type { Post } from "./blog";
+import type { City, Company, GuidesContent, Job, MarketData } from "./types";
 
 // Server-only reads. lib/jobs.ts is also imported by client components, so this stays separate.
 // Cached because Firestore bills per document read: traffic must not multiply reads.
@@ -40,4 +41,22 @@ export async function getMarketData(): Promise<MarketData | null> {
 
   const snap = await getDoc(doc(getFirestore(app), "market", "current"));
   return snap.exists() ? (snap.data() as MarketData) : null;
+}
+
+export async function getPosts(): Promise<Post[]> {
+  "use cache";
+  cacheLife({ stale: 300, revalidate: 3600, expire: 86400 });
+
+  const snap = await getDocs(collection(getFirestore(app), "posts"));
+  return snap.docs
+    .map((d) => ({ ...d.data(), slug: d.id }) as Post)
+    .sort((a, b) => b.date.localeCompare(a.date));
+}
+
+export async function getGuidesContent(): Promise<GuidesContent | null> {
+  "use cache";
+  cacheLife({ stale: 300, revalidate: 3600, expire: 86400 });
+
+  const snap = await getDoc(doc(getFirestore(app), "content", "guides"));
+  return snap.exists() ? (snap.data() as GuidesContent) : null;
 }

@@ -4,14 +4,14 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getDict, type Locale } from "@/lib/i18n";
-import { POSTS, coverOf, getPost, readMins } from "@/lib/blog";
+import { coverOf, readMins } from "@/lib/blog";
+import { getPosts } from "@/lib/catalog";
 import { Tag } from "@/components/ui";
 import { BackIcon } from "@/components/icons";
 
-export const generateStaticParams = () => POSTS.map((p) => ({ slug: p.slug }));
-
 export async function generateMetadata(props: PageProps<"/[lang]/blog/[slug]">): Promise<Metadata> {
-  const post = getPost((await props.params).slug);
+  const { slug } = await props.params;
+  const post = (await getPosts()).find((p) => p.slug === slug);
   return post ? { title: post.title, description: post.summary, openGraph: { images: [coverOf(post)] } } : {};
 }
 
@@ -27,9 +27,10 @@ async function PostBody({ params }: { params: PageProps<"/[lang]/blog/[slug]">["
   const { lang: l, slug } = await params;
   const lang = l as Locale;
   const d = getDict(lang);
-  const post = getPost(slug);
+  const posts = await getPosts();
+  const post = posts.find((p) => p.slug === slug);
   if (!post) notFound();
-  const more = POSTS.filter((p) => p.slug !== slug).slice(0, 3);
+  const more = posts.filter((p) => p.slug !== slug).slice(0, 3);
   const date = new Date(post.date).toLocaleDateString(lang === "ar" ? "ar-AE" : "en-GB", { day: "numeric", month: "long", year: "numeric" });
 
   return (

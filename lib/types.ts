@@ -36,3 +36,9 @@ export interface MarketData {
   benchmarks: SalaryBenchmark[]; techTrends: TechTrend[]; notes: MarketNote[];
   trendMonths: string[]; yoy: Record<string, number>; sampleSize: number; updatedAt: string;
 }
+
+export type Region = "UAE" | "KSA" | "QA" | "IN";
+export interface Guide { region: Region; title: string; summary: string; mins: number; updated: string; steps: string[] }
+export interface JourneyStep { t: string; s: string; d: string }
+export interface CostRow { city: string; cur: string; rent: number; transport: number; food: number; salary: number }
+export interface GuidesContent { guides: Guide[]; journey: JourneyStep[]; cost: CostRow[] }

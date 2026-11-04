@@ -3,7 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { Suspense } from "react";
 import { getDict, type Locale } from "@/lib/i18n";
-import { BLOG_CATEGORIES, POSTS, coverOf, readMins, type Post } from "@/lib/blog";
+import { BLOG_CATEGORIES, coverOf, readMins, type Post } from "@/lib/blog";
+import { getPosts } from "@/lib/catalog";
 import { PageHeader } from "@/components/ui";
 import type { Dict } from "@/lib/i18n";
 
@@ -40,7 +41,8 @@ export default async function Blog(props: PageProps<"/[lang]/blog">) {
 async function PostList({ lang, d, searchParams }: { lang: Locale; d: Dict; searchParams: PageProps<"/[lang]/blog">["searchParams"] }) {
   const c = (await searchParams).cat;
   const cat = Array.isArray(c) ? c[0] : c;
-  const list = POSTS.filter((p) => !cat || p.category === cat);
+  const posts = await getPosts();
+  const list = posts.filter((p) => !cat || p.category === cat);
   const [lead, ...rest] = list;
   const tabs: [string, string][] = [["", d.blogPage.all], ...BLOG_CATEGORIES.map((k): [string, string] => [k, d.blogPage.cat[k]])];
 
@@ -52,7 +54,7 @@ async function PostList({ lang, d, searchParams }: { lang: Locale; d: Dict; sear
             return (
               <Link key={k || "all"} href={k ? `/${lang}/blog?cat=${k}` : `/${lang}/blog`} aria-current={active ? "page" : undefined}
                 className={`-mb-px h-11 shrink-0 border-b-2 px-4 pt-3 text-sm font-medium transition ${active ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"}`}>
-                {label} <span className="text-muted">{POSTS.filter((p) => !k || p.category === k).length}</span>
+                {label} <span className="text-muted">{posts.filter((p) => !k || p.category === k).length}</span>
               </Link>
             );
           })}
