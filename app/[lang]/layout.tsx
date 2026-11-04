@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { IBM_Plex_Sans, IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from "next/font/google";
 import { LOCALES, getDict, isLocale } from "@/lib/i18n";
 import { LangSwitch, SearchHotkey, ThemeToggle } from "@/components/client";
-import { HeaderAccount } from "@/components/account";
+import { AuthSync, HeaderAccount } from "@/components/account";
 import { FirebaseAnalytics } from "@/components/firebase-analytics";
 import { MenuIcon } from "@/components/icons";
 import "../globals.css";
@@ -43,6 +43,7 @@ export default async function LangLayout(props: LayoutProps<"/[lang]">) {
       <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
       <body className="flex min-h-full flex-col">
         <FirebaseAnalytics />
+        <AuthSync />
         <SearchHotkey />
         <header className="sticky top-0 z-30 border-b border-line/70 bg-surface">
           <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4">

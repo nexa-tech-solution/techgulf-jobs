@@ -61,5 +61,15 @@ export const actions = {
   removeAlert(id: string) { set({ ...state, alerts: state.alerts.filter((a) => a.id !== id) }); },
   signIn(user: User) { set({ ...state, user }); },
   signOut() { set({ ...state, user: null, profile: null }); },
+  /** Aligns the store with the Firebase session. Keeps an edited name for the same account. */
+  syncAuth(user: User | null) {
+    load();
+    if (!user) {
+      if (state.user) actions.signOut();
+      return;
+    }
+    if (state.user?.email === user.email) return;
+    set({ ...state, user, profile: state.user ? null : state.profile });
+  },
   saveProfile(profile: Profile) { set({ ...state, profile, user: state.user && { ...state.user, name: profile.name } }); },
 };

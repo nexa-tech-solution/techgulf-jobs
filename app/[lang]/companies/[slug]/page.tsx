@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { getDict, type Locale } from "@/lib/i18n";
 import { COMPANIES } from "@/lib/mock-data";
 import { getCompany, jobsByCompany } from "@/lib/jobs";
@@ -14,8 +15,33 @@ export async function generateMetadata(props: PageProps<"/[lang]/companies/[slug
   return c ? { title: `${c.name} careers – ${jobsByCompany(c.slug).length} open tech jobs` } : {};
 }
 
-export default async function CompanyPage(props: PageProps<"/[lang]/companies/[slug]">) {
-  const { lang: l, slug } = await props.params;
+export default function CompanyPage(props: PageProps<"/[lang]/companies/[slug]">) {
+  return (
+    <Suspense fallback={<CompanySkeleton />}>
+      <CompanyContent params={props.params} />
+    </Suspense>
+  );
+}
+
+function CompanySkeleton() {
+  return (
+    <>
+      <div className="border-b border-line">
+        <div className="mx-auto max-w-6xl px-4 py-10">
+          <div className="h-16 w-64 animate-pulse rounded-2xl bg-surface" />
+          <div className="mt-4 h-32 max-w-2xl animate-pulse rounded-2xl bg-surface" />
+        </div>
+      </div>
+      <div className="mx-auto grid max-w-6xl gap-3 px-4 py-6 md:grid-cols-2">
+        <div className="h-32 animate-pulse rounded-2xl bg-surface" />
+        <div className="h-32 animate-pulse rounded-2xl bg-surface" />
+      </div>
+    </>
+  );
+}
+
+async function CompanyContent({ params }: Pick<PageProps<"/[lang]/companies/[slug]">, "params">) {
+  const { lang: l, slug } = await params;
   const lang = l as Locale;
   const d = getDict(lang);
   const c = await getCompany(slug);
