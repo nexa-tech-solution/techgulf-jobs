@@ -42,7 +42,7 @@ export function ButtonLink({ href, children, variant = "primary", className = ""
 
 export function PageHeader({ title, sub, children }: { title: string; sub?: string; children?: React.ReactNode }) {
   return (
-    <div className="border-b border-line">
+    <div className="tech-glow border-b border-line bg-surface">
       <div className="mx-auto max-w-6xl px-4 py-8 md:py-10">
         <h1 className="max-w-3xl text-[28px] font-bold leading-tight tracking-tight md:text-[36px]">{title}</h1>
         {sub && <p className="mt-2 max-w-2xl text-muted">{sub}</p>}

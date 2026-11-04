@@ -48,7 +48,7 @@ export default async function LangLayout(props: LayoutProps<"/[lang]">) {
         <AuthSync />
         <SearchHotkey />
         <CloseMenus />
-        <header className="sticky top-0 z-30 border-b border-line/70 bg-surface">
+        <header className="sticky top-0 z-30 border-b border-line/70 bg-surface/85 backdrop-blur-md">
           <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4">
             <Link href={`/${lang}`} className="me-4 text-[17px] font-bold tracking-tight" dir="ltr">techgulf<span className="text-primary">.</span>jobs</Link>
             <nav className="hidden items-center gap-1 lg:flex">

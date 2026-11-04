@@ -37,12 +37,12 @@ body {
   font-feature-settings: "ss01", "cv11";
 }
 
-/* Calm, flat surfaces — content first, no decorative glow */
+/* Flat surfaces; the teal glow is reserved for a few marked panels */
 @utility card {
   background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem;
   transition: border-color .15s;
 }
-@utility card-hover { &:hover { border-color: color-mix(in srgb, var(--ink) 25%, transparent); } }
+@utility card-hover { &:hover { border-color: color-mix(in srgb, var(--primary) 55%, transparent); } }
 @media (prefers-reduced-motion: reduce) { .card-hover:hover { transform: none; } }
 html[lang="ar"] body { font-size: 17px; }
 html[lang="ar"] h1, html[lang="ar"] h2, html[lang="ar"] h3 { line-height: 1.45; }
@@ -62,3 +62,33 @@ html { scroll-behavior: smooth; }
 .prose-job { max-width: 72ch; line-height: 1.6; }
 html[lang="ar"] .prose-job { line-height: 1.8; }
 summary::-webkit-details-marker { display: none; }
+/* z-index keeps open dropdowns above later sections */
+.tech-glow { position: relative; z-index: 1; isolation: isolate; }
+.dot-field { mask-image: radial-gradient(ellipse 55% 95% at 78% 30%, #000 20%, transparent 100%); }
+[dir="rtl"] .dot-field { mask-image: radial-gradient(ellipse 55% 95% at 22% 30%, #000 20%, transparent 100%); }
+/* Endless logo strip: two identical lists, moved by exactly one list's width */
+.marquee { mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent); }
+.marquee-track { animation: marquee 45s linear infinite; }
+.marquee:hover .marquee-track, .marquee:focus-within .marquee-track { animation-play-state: paused; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .marquee { overflow-x: auto; mask-image: none; }
+  .marquee-track { animation: none; }
+  .marquee-copy[aria-hidden="true"] { display: none; }
+}
+/* Map and alert panels: flat in light theme, neon glow only in dark */
+.neon-panel { background-color: var(--surface-2); }
+:root[data-theme="dark"] .tech-glow { background-image: radial-gradient(ellipse 70% 80% at 50% 0%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 75%); }
+:root[data-theme="dark"] .neon-card { border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); box-shadow: 0 0 36px color-mix(in srgb, var(--primary) 14%, transparent); }
+:root[data-theme="dark"] .neon-panel { background-image: radial-gradient(ellipse 55% 60% at 30% 35%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 70%), radial-gradient(ellipse 45% 65% at 80% 60%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 70%); }
+@media (prefers-color-scheme: dark) {
+:root:not([data-theme="light"]) .tech-glow { background-image: radial-gradient(ellipse 70% 80% at 50% 0%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 75%); }
+:root:not([data-theme="light"]) .neon-card { border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); box-shadow: 0 0 36px color-mix(in srgb, var(--primary) 14%, transparent); }
+:root:not([data-theme="light"]) .neon-panel { background-image: radial-gradient(ellipse 55% 60% at 30% 35%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 70%), radial-gradient(ellipse 45% 65% at 80% 60%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 70%); }
+}
+.map-core { filter: drop-shadow(0 0 4px var(--primary)); }
+@keyframes map-flow { to { stroke-dashoffset: -20; } }
+@keyframes map-pulse { from { transform: scale(.35); opacity: .7; } to { transform: scale(1); opacity: 0; } }
+.map-arc { stroke-dasharray: 2 8; animation: map-flow 1.6s linear infinite; }
+.map-pulse { transform-box: fill-box; transform-origin: center; animation: map-pulse 2.8s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) { .map-arc, .map-pulse { animation: none; } .map-pulse { opacity: .25; } }
