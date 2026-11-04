@@ -15,6 +15,7 @@ export const PRIVACY: Record<Locale, PrivacyContent> = {
       ] },
       { heading: "How we use it", items: [
         "To run your account, keep your profile and saved items across devices, and score jobs against the skills you choose.",
+        "If you turn on job emails, to send you new jobs matching your profile. Our email provider, Resend, receives your email address and the jobs in the message. Turn this off on your profile page at any time.",
         "To understand how the site is used and to fix errors.",
       ] },
       { heading: "Who can see it", items: [
@@ -43,6 +44,7 @@ export const PRIVACY: Record<Locale, PrivacyContent> = {
       ] },
       { heading: "كيف نستخدمها", items: [
         "لتشغيل حسابك والاحتفاظ بملفك وعناصرك المحفوظة عبر الأجهزة، وحساب تطابق الوظائف مع المهارات التي تختارها.",
+        "إذا فعّلت رسائل الوظائف، لإرسال الوظائف الجديدة المناسبة لملفك. يتلقى مزود البريد Resend عنوان بريدك والوظائف الواردة في الرسالة. يمكنك إيقافها من صفحة ملفك في أي وقت.",
         "لفهم طريقة استخدام الموقع وإصلاح الأخطاء.",
       ] },
       { heading: "من يمكنه رؤيتها", items: [

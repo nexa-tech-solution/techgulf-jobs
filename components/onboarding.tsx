@@ -29,7 +29,7 @@ function ProfileForm({ d, lang, skills }: { d: Dict; lang: Locale; skills: strin
     location: profile?.location ?? "IN", targets: profile?.targets ?? ["AE"], needVisa: profile?.needVisa ?? true,
     whatsapp: profile?.whatsapp ?? "", skills: profile?.skills ?? [],
     summary: profile?.summary ?? "", linkedin: profile?.linkedin ?? "", portfolio: profile?.portfolio ?? "",
-    work: profile?.work ?? [], education: profile?.education ?? [], languages: profile?.languages ?? [], certifications: profile?.certifications ?? [],
+    work: profile?.work ?? [], education: profile?.education ?? [], languages: profile?.languages ?? [], certifications: profile?.certifications ?? [], emailDigest: profile?.emailDigest ?? false,
   }));
   const [incomplete, setIncomplete] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -143,6 +143,12 @@ function ProfileForm({ d, lang, skills }: { d: Dict; lang: Locale; skills: strin
         <label className="mt-5 flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-line p-4">
           <span><span className="block text-sm font-medium">{t.needVisa}</span><span className="text-xs text-muted">{t.needVisaSub}</span></span>
           <input type="checkbox" checked={form.needVisa} onChange={(e) => set({ needVisa: e.target.checked })} className="peer sr-only" />
+          <span className="relative mt-0.5 h-6 w-11 shrink-0 rounded-full bg-line transition peer-checked:bg-primary peer-focus-visible:ring-4 peer-focus-visible:ring-primary/20 after:absolute after:start-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5 rtl:peer-checked:after:-translate-x-5" aria-hidden />
+        </label>
+
+        <label id="email-digest" className="mt-5 flex cursor-pointer scroll-mt-24 items-start justify-between gap-4 rounded-xl border border-line p-4">
+          <span><span className="block text-sm font-medium">{t.emailDigest}</span><span className="text-xs text-muted">{t.emailDigestSub}</span></span>
+          <input type="checkbox" checked={form.emailDigest} onChange={(e) => set({ emailDigest: e.target.checked })} className="peer sr-only" />
           <span className="relative mt-0.5 h-6 w-11 shrink-0 rounded-full bg-line transition peer-checked:bg-primary peer-focus-visible:ring-4 peer-focus-visible:ring-primary/20 after:absolute after:start-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5 rtl:peer-checked:after:-translate-x-5" aria-hidden />
         </label>
 

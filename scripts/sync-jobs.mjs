@@ -341,7 +341,8 @@ for (const source of sources) {
     }
 
     const writer = db.bulkWriter();
-    for (const j of jobs) writer.set(db.collection("jobs").doc(j.id), j);
+    // Merge keeps notifiedAt, which the email digest uses to tell new jobs from old.
+    for (const j of jobs) writer.set(db.collection("jobs").doc(j.id), j, { merge: true });
 
     // An empty response may be an API fault, so only a non-empty result can delete jobs.
     let deleted = 0;
