@@ -79,7 +79,8 @@ Lần chạy thật đầu tiên **không gửi email**: nó chỉ đánh dấu 
 - Mọi người dùng đã có hồ sơ đều nhận email. Ai không muốn nhận có thể tắt "Email me new matching jobs" trong hồ sơ.
 - Mỗi người nhận tối đa 1 email mỗi ngày, mỗi email tối đa 5 job.
 - Job phải đúng quốc gia họ chọn, có ít nhất 1 kỹ năng của họ, và có cấp bậc hợp với số năm kinh nghiệm.
-- Không có job phù hợp thì không gửi.
+- Không có job phù hợp thì gửi tối đa 5 job mới nhất, ưu tiên quốc gia họ chọn.
+- Email lấy job chưa từng gửi và job đăng trong hôm nay (theo giờ UTC). Không có job nào như vậy thì không gửi.
 
 ### Đọc kết quả
 
@@ -93,7 +94,7 @@ Sync: OK. Email: OK.
 | --- | --- | --- |
 | `FAILED, existing jobs left untouched` | Một nguồn job bị lỗi, job cũ của nguồn đó được giữ nguyên | Thường là lỗi tạm thời, để mai chạy lại. Nếu lặp lại nhiều ngày thì kiểm tra nguồn đó |
 | `First run: ... No emails on this run.` | Lần chạy đầu | Bình thường |
-| `0 new jobs` | Hôm nay không có job mới | Bình thường, không có mail |
+| `0 jobs to send` | Không có job chưa gửi hay job đăng hôm nay | Bình thường, không có mail |
 | `Sent 0, ... of 0 users` | Chưa có người dùng nào có hồ sơ | Tạo hồ sơ để thử |
 | `not sent. ...` | Gửi cho người đó thất bại | Kiểm tra mật khẩu ứng dụng và giới hạn gửi của Gmail, rồi chạy lại |
 | `Add GMAIL_USER and GMAIL_APP_PASSWORD to .env` | Thiếu cấu hình | Thêm vào `.env` |

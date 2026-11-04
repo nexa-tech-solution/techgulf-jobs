@@ -34,6 +34,14 @@ export function jobsForUser(jobs, profile) {
 }
 
 // A personal Gmail account allows about 500 recipients a day.
+/** Used when nothing matches: the newest jobs, with the person's countries first. */
+export function newestJobs(jobs, profile) {
+  const targets = new Set(profile.targets ?? []);
+  return jobs
+    .map((j) => ({ ...j, matched: [], countryName: j.country === "REMOTE" ? "" : COUNTRY_NAME[j.country] }))
+    .sort((a, b) => Number(targets.has(b.country)) - Number(targets.has(a.country)) || b.postedAt.localeCompare(a.postedAt));
+}
+
 async function send({ to, subject, html, text, settingsUrl }) {
   const { createTransport } = await import("nodemailer");
   mailer ??= createTransport({ service: "gmail", auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD } });
@@ -79,8 +87,11 @@ if (!baselineDone) {
   process.exit(0);
 }
 
-const newJobs = pending.map((d) => ({ ...d.data(), id: d.id }));
-console.log(`${newJobs.length} new jobs`);
+// Not yet emailed, or posted today (UTC). digestRuns stops anyone getting two emails in a day.
+const newJobs = jobSnap.docs
+  .filter((d) => !d.get("notifiedAt") || String(d.get("postedAt")).startsWith(today))
+  .map((d) => ({ ...d.data(), id: d.id }));
+console.log(`${newJobs.length} jobs to send (new or posted today)`);
 if (!newJobs.length) process.exit(0);
 
 const userSnap = await db.collection("users").get();
@@ -93,8 +104,10 @@ let sent = 0, skipped = 0, failed = 0;
 for (const user of recipients) {
   const { email, profile } = user.data();
   const matches = jobsForUser(newJobs, profile);
-  if (!email || !matches.length || alreadySent.has(user.id)) { skipped++; continue; }
-  const message = renderDigest({ name: profile.name, jobs: matches.slice(0, MAX_JOBS), total: Math.min(matches.length, MAX_JOBS), siteUrl: SITE_URL });
+  const personal = matches.length > 0;
+  const picks = (personal ? matches : newestJobs(newJobs, profile)).slice(0, MAX_JOBS);
+  if (!email || alreadySent.has(user.id)) { skipped++; continue; }
+  const message = renderDigest({ name: profile.name, jobs: picks, total: picks.length, personal, siteUrl: SITE_URL });
   if (dryRun) { console.log(`Would email user ${user.id}: ${message.subject}`); sent++; continue; }
   try {
     await send({ to: email, ...message, settingsUrl: `${SITE_URL}/en/onboarding#email-digest` });
