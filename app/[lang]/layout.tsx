@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { IBM_Plex_Sans, IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from "next/font/google";
 import { LOCALES, getDict, isLocale } from "@/lib/i18n";
+import { BLOG_ENABLED } from "@/lib/blog";
 import { SITE_URL } from "@/lib/seo";
 import { CloseMenus, LangSwitch, SearchHotkey, ThemeScript, ThemeToggle } from "@/components/client";
 import { AuthSync, HeaderAccount } from "@/components/account";
@@ -36,7 +37,7 @@ export default async function LangLayout(props: LayoutProps<"/[lang]">) {
   const d = getDict(lang);
   const nav = [
     ["jobs", d.nav.jobs], ["companies", d.nav.companies], ["salaries", d.nav.salaries],
-    ["guides", d.nav.guides], ["blog", d.nav.blog], ["cv", d.nav.cv],
+    ["guides", d.nav.guides], ...(BLOG_ENABLED ? [["blog", d.nav.blog] as const] : []), ["cv", d.nav.cv],
   ] as const;
 
   return (

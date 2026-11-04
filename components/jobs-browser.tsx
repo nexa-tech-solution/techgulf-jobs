@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { Dict, Locale } from "@/lib/i18n";
 import type { Job } from "@/lib/types";
 import { filterJobs, type JobFilters } from "@/lib/jobs";
@@ -53,6 +53,18 @@ export function JobsBrowser({ d, lang, jobs, initial, counts, now }: {
     return () => clearTimeout(t);
   });
 
+  // The filter bar grows when its filters wrap, so the sidebar follows its real height.
+  const bar = useRef<HTMLDivElement>(null);
+  const content = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!bar.current) return;
+    const observer = new ResizeObserver(([entry]) => {
+      content.current?.style.setProperty("--filter-bar", `${entry.target.getBoundingClientRect().height}px`);
+    });
+    observer.observe(bar.current);
+    return () => observer.disconnect();
+  }, []);
+
   const chips: [Patch, string][] = [];
   if (f.country) chips.push([{ country: "", city: "" }, d.country[f.country as keyof Dict["country"]] ?? f.country]);
   if (f.city) chips.push([{ city: "" }, f.city]);
@@ -68,7 +80,7 @@ export function JobsBrowser({ d, lang, jobs, initial, counts, now }: {
 
   return (
     <>
-      <div className="sticky top-16 z-20 border-b border-line bg-surface">
+      <div ref={bar} className="sticky top-16 z-20 border-b border-line bg-surface">
         <div className="mx-auto max-w-6xl space-y-3 px-4 py-4">
           <form role="search" onSubmit={(e) => { e.preventDefault(); go({ q }); }} className="flex gap-2">
             <div className="relative flex-1">
@@ -82,7 +94,7 @@ export function JobsBrowser({ d, lang, jobs, initial, counts, now }: {
         </div>
       </div>
 
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-6 lg:grid-cols-[1fr_300px]">
+      <div ref={content} className="mx-auto grid max-w-6xl gap-8 px-4 py-6 lg:grid-cols-[1fr_300px]">
         <div className="min-w-0">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -129,8 +141,7 @@ export function JobsBrowser({ d, lang, jobs, initial, counts, now }: {
           </div>
         </div>
 
-        <aside className="space-y-4 lg:sticky lg:top-[13.5rem] lg:self-start">
-          <SaveSearch d={d} lang={lang} f={f} />
+        <aside className="space-y-4">
           <div className="flex gap-3 rounded-xl border border-line bg-surface p-5 text-sm text-muted">
             <ShieldIcon className="h-5 w-5 shrink-0 text-danger" /><p>{d.scamWarn}</p>
           </div>
@@ -138,6 +149,8 @@ export function JobsBrowser({ d, lang, jobs, initial, counts, now }: {
             <p className="font-semibold">{d.nav.salaries}</p>
             <p className="mt-1 text-sm text-muted">{d.salariesSub}</p>
           </Link>
+          {/* Last, so it can stay pinned without covering the cards above it */}
+          <div className="jobs-alert"><SaveSearch d={d} lang={lang} f={f} /></div>
         </aside>
       </div>
     </>

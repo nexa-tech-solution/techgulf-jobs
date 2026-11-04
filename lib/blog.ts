@@ -1,3 +1,6 @@
+// Temporarily hidden: removes the blog from menus and the sitemap, and its URLs return 404. Set to true to restore.
+export const BLOG_ENABLED = false;
+
 /**
  * Blog posts live in the Firestore `posts` collection (document id = slug).
  * Body syntax (one string per block): "## Heading", "- list item", anything else = paragraph.

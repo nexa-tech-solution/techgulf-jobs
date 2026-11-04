@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getDict, type Locale } from "@/lib/i18n";
-import { coverOf } from "@/lib/blog";
+import { BLOG_ENABLED, coverOf } from "@/lib/blog";
 import { getPosts } from "@/lib/catalog";
 import { orSample, pageMeta } from "@/lib/seo";
 import { Tag } from "@/components/ui";
@@ -27,6 +27,7 @@ export async function generateStaticParams() {
 }
 
 export default async function BlogPost(props: PageProps<"/[lang]/blog/[slug]">) {
+  if (!BLOG_ENABLED) notFound();
   const { slug } = await props.params;
   // Before Suspense: once streaming starts, the response can no longer become a real 404.
   if (!(await getPosts()).some((p) => p.slug === slug)) notFound();

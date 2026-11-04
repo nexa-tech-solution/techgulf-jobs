@@ -94,3 +94,7 @@ summary::-webkit-details-marker { display: none; }
 }
 @keyframes map-quake { 0% { transform: scale(.2); opacity: .55; } 100% { transform: scale(1); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .map-quake { display: none; } }
+/* Jobs alert card: stays just below the sticky header and filter bar */
+@media (min-width: 1024px) {
+  .jobs-alert { position: sticky; top: calc(4rem + var(--filter-bar, 15rem) + 1.5rem); }
+}

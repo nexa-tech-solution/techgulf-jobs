@@ -4,7 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { Suspense } from "react";
 import { getDict, type Locale } from "@/lib/i18n";
-import { BLOG_CATEGORIES, coverOf, type Post } from "@/lib/blog";
+import { notFound } from "next/navigation";
+import { BLOG_CATEGORIES, BLOG_ENABLED, coverOf, type Post } from "@/lib/blog";
 import { getPosts } from "@/lib/catalog";
 import { PageHeader } from "@/components/ui";
 import type { Dict } from "@/lib/i18n";
@@ -28,6 +29,7 @@ function Meta({ p, d, lang }: { p: Post; d: Dict; lang: Locale }) {
 }
 
 export default async function Blog(props: PageProps<"/[lang]/blog">) {
+  if (!BLOG_ENABLED) notFound();
   const lang = (await props.params).lang as Locale;
   const d = getDict(lang);
   return (
