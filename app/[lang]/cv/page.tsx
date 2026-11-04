@@ -4,7 +4,7 @@ import { JOBS } from "@/lib/mock-data";
 import { PageHeader } from "@/components/ui";
 import { CvMatch } from "@/components/cv-match";
 
-export const metadata: Metadata = { title: "CV match" };
+export const metadata: Metadata = { title: "Skill match" };
 
 export default async function Cv(props: PageProps<"/[lang]/cv">) {
   const lang = (await props.params).lang as Locale;

@@ -98,3 +98,31 @@ export function SearchHotkey() {
   }, []);
   return null;
 }
+
+/** Native <details> menus stay open by themselves. Closes them on an outside press, a choice inside, or Esc. */
+export function CloseMenus() {
+  useEffect(() => {
+    const openMenus = () => [...document.querySelectorAll<HTMLDetailsElement>("details[data-menu][open]")];
+    const onPress = (e: PointerEvent) => {
+      openMenus().forEach((menu) => { if (!menu.contains(e.target as Node)) menu.open = false; });
+    };
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as Element;
+      // The summary toggles the menu itself; links and buttons inside are choices
+      if (target.closest("summary")) return;
+      if (target.closest("a, button")) openMenus().forEach((menu) => { if (menu.contains(target)) menu.open = false; });
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") openMenus().forEach((menu) => { menu.open = false; });
+    };
+    document.addEventListener("pointerdown", onPress);
+    document.addEventListener("click", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPress);
+      document.removeEventListener("click", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, []);
+  return null;
+}

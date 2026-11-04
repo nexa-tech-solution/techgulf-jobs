@@ -5,9 +5,16 @@ export type AppStatus = "saved" | "applied" | "interview" | "offer" | "rejected"
 export type Channel = "email" | "whatsapp" | "telegram";
 export interface Alert { id: string; key: string; filters: Record<string, string>; channels: Channel[]; frequency: "instant" | "daily" | "weekly"; createdAt: string }
 export interface User { uid: string; name: string; email: string; provider: "google"; avatarColor: string }
+export type WorkEntry = { title: string; company: string; start: string; end: string; description: string };
+export type EducationEntry = { school: string; degree: string; start: string; end: string };
+export type LanguageEntry = { name: string; level: string };
+export type CertificationEntry = { name: string; issuer: string; year: string };
 export interface Profile {
   name: string; title: string; years: string; location: string; targets: string[];
-  needVisa: boolean; whatsapp: string; cvName: string; cvPath?: string; cvConsentAt?: string; skills: string[];
+  needVisa: boolean; whatsapp: string; skills: string[];
+  // Added after launch of the profile, so older saved profiles may not have them
+  summary?: string; linkedin?: string; portfolio?: string; work?: WorkEntry[]; education?: EducationEntry[];
+  languages?: LanguageEntry[]; certifications?: CertificationEntry[];
 }
 
 /** Stable key for a set of filters (ignores sort). */
@@ -68,10 +75,6 @@ export const actions = {
   /** The account keeps this data in Firestore, so the browser holds no copy after sign-out. */
   signOut() { set(EMPTY); },
   hydrate(data: Pick<State, "jobs" | "alerts" | "profile">) { set({ ...state, ...data }); },
-  /** Records the latest CV on an existing profile. First-time uploads are saved with the onboarding form. */
-  setCv(cv: Pick<Profile, "cvName" | "cvPath" | "cvConsentAt">) { if (state.profile) set({ ...state, profile: { ...state.profile, ...cv } }); },
-  /** Fields are blanked because the sync merges into the saved profile. */
-  clearCv() { if (state.profile) set({ ...state, profile: { ...state.profile, cvName: "", cvPath: "", cvConsentAt: "" } }); },
   /** Aligns the store with the Firebase session. Keeps an edited name for the same account. */
   syncAuth(user: User | null) {
     load();

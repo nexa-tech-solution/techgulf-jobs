@@ -1,13 +1,13 @@
 "use client";
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import type { Dict, Locale } from "@/lib/i18n";
 import type { Job } from "@/lib/types";
 import { COMPANIES } from "@/lib/mock-data";
 import { formatSalary } from "@/lib/format";
-import { actions, useStore } from "@/lib/store";
+import { useStore } from "@/lib/store";
 import { Logo } from "./ui";
-import { CheckIcon, UploadIcon } from "./icons";
+import { CheckIcon } from "./icons";
 
 const EXTRA = ["Kubernetes", "Go", "Kafka", "Terraform", "Next.js", "Django", "Spark", "LLM", "Java", "Spring"];
 
@@ -27,73 +27,15 @@ function Ring({ value }: { value: number }) {
 
 export function CvMatch({ d, lang, jobs }: { d: Dict; lang: Locale; jobs: Job[] }) {
   const t = d.cvPage;
-  const [stage, setStage] = useState<"idle" | "parsing" | "done">("idle");
-  const [step, setStep] = useState(0);
-  const [file, setFile] = useState<string>("");
-  const [drag, setDrag] = useState(false);
+  const { profile } = useStore();
   const [editedSkills, setSkills] = useState<string[] | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [consented, setConsented] = useState(false);
-  const [consentMissing, setConsentMissing] = useState(false);
-  const [deleteFailed, setDeleteFailed] = useState(false);
-  const input = useRef<HTMLInputElement>(null);
-  // CV uploaded during profile setup → show results straight away
-  const { profile, user } = useStore();
-  const [saveFailed, setSaveFailed] = useState(false);
-  const [replaced, setReplaced] = useState(false);
-  const useProfileCv = stage === "idle" && !!profile?.cvName && !replaced;
-  const view = useProfileCv ? "done" : stage;
-  const cvFile = useProfileCv ? profile!.cvName : file;
   const foundSkills = useMemo(() => profile?.skills ?? [], [profile]);
   const skills = useMemo(() => editedSkills ?? foundSkills, [editedSkills, foundSkills]);
-
-  const start = (f?: File) => {
-    if (!f) return;
-    // Only signed-in users with a profile have the file stored
-    if (user && profile && !consented) return setConsentMissing(true);
-    setFile(f.name);
-    setSkills(null);
-    setStage("parsing");
-    setStep(0);
-    setSaveFailed(false);
-    // A signed-in user's newest CV replaces the stored one
-    if (user && profile) {
-      setSaving(true);
-      import("@/lib/cv")
-        .then(({ uploadCv }) => uploadCv(user.uid, f))
-        .then(actions.setCv)
-        .catch((error) => {
-          console.error("CV upload failed", error);
-          setSaveFailed(true);
-        })
-        .finally(() => setSaving(false));
-    }
-    [1, 2, 3].forEach((s) => setTimeout(() => setStep(s), s * 650));
-    setTimeout(() => setStage("done"), 2300);
-  };
-
-  const removeCv = async () => {
-    if (!user || !window.confirm(d.onboard.deleteCvConfirm)) return;
-    setDeleteFailed(false);
-    try {
-      const [{ deleteCv }, { clearCvRecord }] = await Promise.all([import("@/lib/cv"), import("@/lib/cloud-sync")]);
-      await deleteCv(user.uid);
-      await clearCvRecord(user.uid);
-      actions.clearCv();
-      setSkills(null);
-      setFile("");
-      setReplaced(true);
-      setStage("idle");
-    } catch (error) {
-      console.error("CV delete failed", error);
-      setDeleteFailed(true);
-    }
-  };
 
   const scored = useMemo(() => jobs.map((j) => {
     const have = j.tags.filter((x) => skills.includes(x));
     const missing = j.tags.filter((x) => !skills.includes(x));
-    // Share of the employer's keywords found in the CV
+    // Share of the employer's keywords among the chosen skills
     return { j, have, missing, score: Math.round((have.length / Math.max(j.tags.length, 1)) * 100) };
   }).sort((a, b) => b.score - a.score), [jobs, skills]);
 
@@ -104,83 +46,16 @@ export function CvMatch({ d, lang, jobs }: { d: Dict; lang: Locale; jobs: Job[] 
   }, [scored]);
   const maxGap = gaps[0]?.[1] ?? 1;
 
-  /* ---------- Idle ---------- */
-  if (view === "idle")
-    return (
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <div
-          onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
-          onDragLeave={() => setDrag(false)}
-          onDrop={(e) => { e.preventDefault(); setDrag(false); start(e.dataTransfer.files[0]); }}
-          onClick={() => input.current?.click()}
-          role="button" tabIndex={0} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && input.current?.click()}
-          className={`flex min-h-80 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition ${drag ? "border-primary bg-primary/5" : "border-line bg-surface hover:border-ink/30"}`}
-        >
-          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary"><UploadIcon className="h-7 w-7" /></span>
-          <p className="mt-4 text-lg font-semibold">{drag ? t.dropNow : t.dropTitle}</p>
-          <p className="mt-1 text-sm text-muted">{t.dropSub}</p>
-          <span className="mt-5 inline-flex h-11 items-center rounded-lg bg-primary px-5 font-semibold text-on-primary">{d.upload}</span>
-          <p className="mt-4 text-xs text-muted">PDF, DOCX · max 5 MB</p>
-          {user && profile && (
-            <label onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} className="mt-4 flex cursor-pointer items-start gap-2 text-start text-sm">
-              <input type="checkbox" checked={consented} onChange={(e) => { setConsented(e.target.checked); setConsentMissing(false); }} className="mt-1 h-4 w-4 shrink-0 accent-[var(--primary)]" />
-              <span>{d.onboard.cvConsent} <Link href={`/${lang}/privacy`} target="_blank" className="text-primary hover:underline">{d.onboard.privacyLink}</Link></span>
-            </label>
-          )}
-          {consentMissing && <p role="alert" className="mt-2 text-sm text-danger">{d.onboard.cvConsentRequired}</p>}
-          <input ref={input} type="file" accept=".pdf,.doc,.docx" className="sr-only" onChange={(e) => start(e.target.files?.[0])} />
-        </div>
-        <div className="rounded-2xl border border-line bg-surface p-6">
-          <p className="font-semibold">{t.howTitle}</p>
-          <ol className="mt-4 space-y-5">
-            {t.how.map(([h, s], i) => (
-              <li key={h} className="flex gap-3">
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-surface-2 text-sm font-semibold">{i + 1}</span>
-                <div><p className="font-medium">{h}</p><p className="mt-0.5 text-sm text-muted">{s}</p></div>
-              </li>
-            ))}
-          </ol>
-          <p className="mt-6 flex gap-2 border-t border-line pt-4 text-xs text-muted"><span aria-hidden>🔒</span>{t.privacy}</p>
-        </div>
-      </div>
-    );
-
-  /* ---------- Parsing ---------- */
-  if (view === "parsing")
-    return (
-      <div className="mx-auto max-w-md rounded-2xl border border-line bg-surface p-8" role="status" aria-live="polite">
-        <p className="truncate text-sm text-muted" dir="ltr">{file}</p>
-        <ul className="mt-5 space-y-4">
-          {t.steps.map((s, i) => (
-            <li key={s} className={`flex items-center gap-3 text-sm transition ${i <= step ? "text-ink" : "text-muted/60"}`}>
-              <span className={`grid h-6 w-6 place-items-center rounded-full ${i < step ? "bg-primary text-on-primary" : i === step ? "border-2 border-primary border-t-transparent animate-spin" : "border border-line"}`}>
-                {i < step && <CheckIcon className="h-3.5 w-3.5" />}
-              </span>
-              {s}
-            </li>
-          ))}
-        </ul>
-      </div>
-    );
-
   /* ---------- Results ---------- */
   const top = scored.slice(0, 6);
   const strong = scored.filter((s) => s.score >= 75).length;
   return (
     <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
       <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-        {saveFailed && <p role="alert" className="text-sm text-danger">{d.onboard.uploadError}</p>}
-        {deleteFailed && <p role="alert" className="text-sm text-danger">{d.onboard.deleteCvError}</p>}
         <div className="rounded-2xl border border-line bg-surface p-5">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-xs font-medium text-muted">{t.profile}</p>
-            <button onClick={() => { setReplaced(true); setStage("idle"); }} className="text-xs font-medium text-primary hover:underline">{t.replace}</button>
-          </div>
-          <div className="mt-1 flex justify-end">
-            {user && profile?.cvName && <button onClick={removeCv} disabled={saving} className="text-xs font-medium text-danger hover:underline disabled:opacity-60">{d.onboard.deleteCv}</button>}
-          </div>
+          <p className="text-xs font-medium text-muted">{t.profile}</p>
           {profile?.title && <p className="mt-2 text-lg font-semibold">{profile.title}</p>}
-          <p className="text-sm text-muted">{profile?.years && <>{t.years.replace("{n}", profile.years)} · </>}<span dir="ltr">{cvFile}</span></p>
+          {profile?.years && <p className="text-sm text-muted">{t.years.replace("{n}", profile.years)}</p>}
           <p className="mt-4 text-xs font-medium text-muted">{t.yourSkills}</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {[...new Set([...foundSkills, ...skills, ...EXTRA])].map((s) => {

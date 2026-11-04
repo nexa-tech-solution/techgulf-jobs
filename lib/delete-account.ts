@@ -1,6 +1,5 @@
 import { GoogleAuthProvider, deleteUser, getAuth, reauthenticateWithPopup } from "firebase/auth";
 import { collection, deleteDoc, doc, getDocs, getFirestore } from "firebase/firestore";
-import { deleteCv } from "@/lib/cv";
 import { app } from "@/lib/firebase";
 
 /**
@@ -15,7 +14,6 @@ export async function deleteAccount() {
 
   const db = getFirestore(app);
   const uid = user.uid;
-  await deleteCv(uid);
   const [saved, alerts] = await Promise.all([
     getDocs(collection(db, "users", uid, "savedJobs")),
     getDocs(collection(db, "users", uid, "alerts")),

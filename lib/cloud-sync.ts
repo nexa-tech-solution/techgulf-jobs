@@ -1,4 +1,4 @@
-import { collection, deleteDoc, doc, getDoc, getDocs, getFirestore, serverTimestamp, setDoc, updateDoc, writeBatch } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDoc, getDocs, getFirestore, serverTimestamp, setDoc, writeBatch } from "firebase/firestore";
 import { app } from "@/lib/firebase";
 import { actions, getStoreState, subscribeStore, type Alert, type AppStatus, type Profile, type State } from "@/lib/store";
 
@@ -67,16 +67,6 @@ function pushChanges(uid: string, prev: State, next: State) {
   }
   if (next.profile && next.profile !== prev.profile) {
     setDoc(doc(db, "users", uid), { email: next.user?.email ?? "", profile: clean(next.profile), updatedAt: now }, { merge: true }).catch(report);
-  }
-}
-
-/** Waits for the saved profile to forget the CV, so a failure can be shown and retried. */
-export async function clearCvRecord(uid: string) {
-  try {
-    await updateDoc(doc(db, "users", uid), { "profile.cvName": "", "profile.cvPath": "", "profile.cvConsentAt": "", updatedAt: serverTimestamp() });
-  } catch (error) {
-    // No saved profile means there is no CV record to clear
-    if ((error as { code?: string }).code !== "not-found") throw error;
   }
 }
 

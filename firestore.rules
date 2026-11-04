@@ -5,6 +5,15 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == uid;
     }
 
+    // Public data. Only the server (Admin SDK) writes it.
+    match /companies/{slug} {
+      allow read: if true;
+    }
+    match /jobs/{jobId} {
+      allow read: if resource.data.status == 'active';
+    }
+
+    // Each person's private data
     match /users/{uid} {
       allow read, write: if isOwner(uid);
       match /savedJobs/{jobId} {
@@ -13,6 +22,14 @@ service cloud.firestore {
       match /alerts/{alertId} {
         allow read, write: if isOwner(uid);
       }
+    }
+
+    // Employers can read their own records. Only the server writes them.
+    match /companyMembers/{id} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+    }
+    match /jobSubmissions/{id} {
+      allow read: if request.auth != null && resource.data.submittedBy == request.auth.uid;
     }
   }
 }

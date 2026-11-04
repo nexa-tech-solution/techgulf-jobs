@@ -26,7 +26,7 @@ export function HeaderAccount({ d, lang }: { d: Dict; lang: Locale }) {
   if (!user)
     return <Link href={`/${lang}/login`} className="hidden h-10 items-center rounded-lg border border-line bg-surface px-4 text-sm font-semibold hover:border-primary sm:inline-flex">{d.nav.login}</Link>;
   return (
-    <details className="relative hidden sm:block">
+    <details data-menu className="relative hidden sm:block">
       <summary className="grid h-9 w-9 cursor-pointer place-items-center rounded-full bg-primary text-sm font-semibold text-on-primary" aria-label={user.email}>
         {user.name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()}
       </summary>

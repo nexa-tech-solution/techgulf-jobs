@@ -1,42 +1,45 @@
 "use client";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { actions, useStore } from "@/lib/store";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { actions, useStore, type CertificationEntry, type EducationEntry, type LanguageEntry, type WorkEntry } from "@/lib/store";
 import type { Dict, Locale } from "@/lib/i18n";
 import { COUNTRY_CODES } from "@/lib/format";
 import { JOBS } from "@/lib/mock-data";
+import { SAMPLE_PROFILE } from "@/lib/sample-profile";
+import { CvEntries } from "./cv-fields";
 import { Select } from "./select";
 import { SkillPicker } from "./skill-picker";
-import { CheckIcon, UploadIcon } from "./icons";
+import { CheckIcon } from "./icons";
 
 const field = "h-11 w-full rounded-lg border border-line bg-surface px-3 text-base outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/15";
 
 // Employer keywords, so typed skills use the same spelling that job matching compares against
 const KNOWN_SKILLS = [...new Set(JOBS.flatMap((job) => job.tags))].sort((a, b) => a.localeCompare(b));
-const UPLOAD_MIN_MS = 1200;
 
-export function Onboarding({ d, lang }: { d: Dict; lang: Locale }) {
+const subscribeNever = () => () => {};
+
+/** Saved data only exists in the browser, so the form must first render there to start with it filled in. */
+export function Onboarding(props: { d: Dict; lang: Locale }) {
+  const inBrowser = useSyncExternalStore(subscribeNever, () => true, () => false);
+  return inBrowser ? <ProfileForm {...props} /> : null;
+}
+
+function ProfileForm({ d, lang }: { d: Dict; lang: Locale }) {
   const t = d.onboard;
   const router = useRouter();
   const { user, profile } = useStore();
-  const fileRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState(() => ({
     name: profile?.name ?? user?.name ?? "", title: profile?.title ?? "", years: profile?.years ?? "",
     location: profile?.location ?? "IN", targets: profile?.targets ?? ["AE"], needVisa: profile?.needVisa ?? true,
-    whatsapp: profile?.whatsapp ?? "", cvName: profile?.cvName ?? "", cvPath: profile?.cvPath ?? "", cvConsentAt: profile?.cvConsentAt ?? "", skills: profile?.skills ?? [],
+    whatsapp: profile?.whatsapp ?? "", skills: profile?.skills ?? [],
+    summary: profile?.summary ?? "", linkedin: profile?.linkedin ?? "", portfolio: profile?.portfolio ?? "",
+    work: profile?.work ?? [], education: profile?.education ?? [], languages: profile?.languages ?? [], certifications: profile?.certifications ?? [],
   }));
-  const [parsing, setParsing] = useState(false);
-  const [drag, setDrag] = useState(false);
-  const [uploadFailed, setUploadFailed] = useState(false);
   const [incomplete, setIncomplete] = useState(false);
-  const [consented, setConsented] = useState(false);
-  const [consentMissing, setConsentMissing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [accountDeleteFailed, setAccountDeleteFailed] = useState(false);
   const accountDeleted = useRef(false);
-  const [deleteFailed, setDeleteFailed] = useState(false);
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }));
 
   // Signed-out users go to sign in first
@@ -44,29 +47,6 @@ export function Onboarding({ d, lang }: { d: Dict; lang: Locale }) {
   if (!user) return null;
   // Name comes from Google until the user edits it
   const name = form.name || user.name;
-
-  const upload = async (f?: File) => {
-    if (!f) return;
-    if (!consented) return setConsentMissing(true);
-    const previous = form.cvName;
-    setParsing(true);
-    setUploadFailed(false);
-    set({ cvName: f.name });
-    try {
-      const { uploadCv } = await import("@/lib/cv");
-      // Short minimum so the progress state doesn't flash
-      const [cv] = await Promise.all([uploadCv(user.uid, f), new Promise((done) => setTimeout(done, UPLOAD_MIN_MS))]);
-      set(cv);
-      actions.setCv(cv);
-    } catch (error) {
-      console.error("CV upload failed", error);
-      set({ cvName: previous });
-      setParsing(false);
-      setUploadFailed(true);
-      return;
-    }
-    setParsing(false);
-  };
 
   const removeAccount = async () => {
     setDeletingAccount(true);
@@ -86,29 +66,16 @@ export function Onboarding({ d, lang }: { d: Dict; lang: Locale }) {
     }
   };
 
-  const removeCv = async () => {
-    if (!window.confirm(t.deleteCvConfirm)) return;
-    setUploadFailed(false);
-    setDeleteFailed(false);
-    try {
-      const [{ deleteCv }, { clearCvRecord }] = await Promise.all([import("@/lib/cv"), import("@/lib/cloud-sync")]);
-      await deleteCv(user.uid);
-      await clearCvRecord(user.uid);
-      actions.clearCv();
-      set({ cvName: "", cvPath: "", cvConsentAt: "" });
-    } catch (error) {
-      console.error("CV delete failed", error);
-      setDeleteFailed(true);
-    }
-  };
-
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (parsing) return;
-    if (!form.years || !form.targets.length || !form.skills.length) return setIncomplete(true);
+    // New graduates may have no jobs yet, so either history is enough
+    if (!form.years || !form.targets.length || !form.skills.length || !(form.work.length || form.education.length)) return setIncomplete(true);
+    setIncomplete(false);
     actions.saveProfile({ ...form, name });
     const raw = new URLSearchParams(location.search).get("next");
-    router.push(raw && /^\/(?![/\\])/.test(raw) ? raw : `/${lang}/jobs`);
+    // Coming back to this page after saving would look like nothing happened
+    const safe = raw && /^\/(?![/\\])/.test(raw) && raw.split("?")[0] !== `/${lang}/onboarding`;
+    router.push(safe ? raw : `/${lang}/jobs`);
   };
 
   const label = (text: string, extra?: string) => (
@@ -118,6 +85,9 @@ export function Onboarding({ d, lang }: { d: Dict; lang: Locale }) {
   return (
     <div className="space-y-6">
     <form onSubmit={submit} className="space-y-6">
+      {process.env.NODE_ENV === "development" && (
+        <button type="button" onClick={() => set(SAMPLE_PROFILE)} className="h-11 w-full rounded-lg border border-dashed border-primary text-sm font-semibold text-primary">Fill sample data (dev only)</button>
+      )}
       {/* Account from Google */}
       <section className="rounded-2xl border border-line bg-surface p-5 md:p-6">
         <div className="flex items-center gap-4">
@@ -130,41 +100,6 @@ export function Onboarding({ d, lang }: { d: Dict; lang: Locale }) {
           </div>
         </div>
         <label className="mt-5 block">{label(t.fullName)}<input required value={name} onChange={(e) => set({ name: e.target.value })} className={field} /></label>
-      </section>
-
-      {/* CV */}
-      <section className="rounded-2xl border border-line bg-surface p-5 md:p-6">
-        <h2 className="font-semibold">{t.cvTitle}</h2>
-        <p className="mt-1 text-sm text-muted">{t.cvSub}</p>
-        {form.cvName ? (
-          <div className="mt-4 flex items-center gap-3 rounded-xl border border-line bg-surface-2 p-4">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-danger/10 text-[11px] font-bold text-danger">PDF</span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium" dir="ltr">{form.cvName}</p>
-              <p className="text-xs text-muted">{parsing ? t.reading : t.cvReady}</p>
-            </div>
-            {parsing ? <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" aria-label={t.reading} />
-              : <button type="button" onClick={() => fileRef.current?.click()} className="text-sm font-medium text-primary hover:underline">{t.replace}</button>}
-            {!parsing && <button type="button" onClick={removeCv} className="text-sm font-medium text-danger hover:underline">{t.deleteCv}</button>}
-          </div>
-        ) : (
-          <div role="button" tabIndex={0} onClick={() => fileRef.current?.click()} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && fileRef.current?.click()}
-            onDragOver={(e) => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
-            onDrop={(e) => { e.preventDefault(); setDrag(false); upload(e.dataTransfer.files[0]); }}
-            className={`mt-4 flex cursor-pointer flex-col items-center rounded-xl border-2 border-dashed p-8 text-center transition ${drag ? "border-primary bg-primary/5" : "border-line hover:border-ink/30"}`}>
-            <UploadIcon className="h-7 w-7 text-primary" />
-            <p className="mt-2 font-medium">{t.drop}</p>
-            <p className="text-xs text-muted">PDF, DOCX · max 5 MB</p>
-          </div>
-        )}
-        <label className="mt-4 flex cursor-pointer items-start gap-2 text-sm">
-          <input type="checkbox" checked={consented} onChange={(e) => { setConsented(e.target.checked); setConsentMissing(false); }} className="mt-1 h-4 w-4 shrink-0 accent-[var(--primary)]" />
-          <span>{t.cvConsent} <Link href={`/${lang}/privacy`} target="_blank" className="text-primary hover:underline">{t.privacyLink}</Link></span>
-        </label>
-        {consentMissing && <p role="alert" className="mt-2 text-sm text-danger">{t.cvConsentRequired}</p>}
-        {uploadFailed && <p role="alert" className="mt-3 text-sm text-danger">{t.uploadError}</p>}
-        {deleteFailed && <p role="alert" className="mt-3 text-sm text-danger">{t.deleteCvError}</p>}
-        <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" className="sr-only" onChange={(e) => { upload(e.target.files?.[0]); e.target.value = ""; }} />
       </section>
 
       {/* Work */}
@@ -221,10 +156,60 @@ export function Onboarding({ d, lang }: { d: Dict; lang: Locale }) {
         </label>
       </section>
 
+      {/* About */}
+      <section className="rounded-2xl border border-line bg-surface p-5 md:p-6">
+        <h2 className="font-semibold">{t.aboutTitle}</h2>
+        <label className="mt-4 block">{label(t.summary)}
+          <textarea required rows={4} value={form.summary} onChange={(e) => set({ summary: e.target.value })} placeholder={t.summaryHint} className={`${field} h-auto py-2`} />
+        </label>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <label className="block">{label("LinkedIn", t.optional)}
+            <input type="url" dir="ltr" value={form.linkedin} onChange={(e) => set({ linkedin: e.target.value })} placeholder="https://linkedin.com/in/…" className={field} />
+          </label>
+          <label className="block">{label(t.portfolio, t.optional)}
+            <input type="url" dir="ltr" value={form.portfolio} onChange={(e) => set({ portfolio: e.target.value })} placeholder="https://github.com/…" className={field} />
+          </label>
+        </div>
+      </section>
+
+      <CvEntries<WorkEntry> title={t.workHistory} sub={t.historyHint} entries={form.work} onChange={(work) => set({ work })} addLabel={t.addWork} removeLabel={t.removeEntry} inputClassName={field}
+        blank={{ title: "", company: "", start: "", end: "", description: "" }}
+        fields={[
+          { key: "title", label: t.roleTitle, required: true },
+          { key: "company", label: t.company, required: true },
+          { key: "start", label: t.startDate, placeholder: "03/2021", required: true, ltr: true },
+          { key: "end", label: t.endDate, placeholder: t.endHint, required: true },
+          { key: "description", label: t.workDescription, placeholder: t.workDescriptionHint, multiline: true },
+        ]} />
+
+      <CvEntries<EducationEntry> title={t.educationTitle} entries={form.education} onChange={(education) => set({ education })} addLabel={t.addEducation} removeLabel={t.removeEntry} inputClassName={field}
+        blank={{ school: "", degree: "", start: "", end: "" }}
+        fields={[
+          { key: "school", label: t.school, required: true },
+          { key: "degree", label: t.degree, required: true },
+          { key: "start", label: t.startYear, placeholder: "2016", ltr: true },
+          { key: "end", label: t.endYear, placeholder: "2020", ltr: true },
+        ]} />
+
+      <CvEntries<LanguageEntry> title={t.languagesTitle} entries={form.languages} onChange={(languages) => set({ languages })} addLabel={t.addLanguage} removeLabel={t.removeEntry} inputClassName={field}
+        blank={{ name: "", level: "" }}
+        fields={[
+          { key: "name", label: t.languageName, placeholder: "English", required: true },
+          { key: "level", label: t.languageLevel, placeholder: t.languageLevelHint },
+        ]} />
+
+      <CvEntries<CertificationEntry> title={t.certificationsTitle} entries={form.certifications} onChange={(certifications) => set({ certifications })} addLabel={t.addCertification} removeLabel={t.removeEntry} inputClassName={field}
+        blank={{ name: "", issuer: "", year: "" }}
+        fields={[
+          { key: "name", label: t.certificationName, placeholder: "AWS Solutions Architect", required: true },
+          { key: "issuer", label: t.certificationIssuer, placeholder: "Amazon" },
+          { key: "year", label: t.certificationYear, placeholder: "2024", ltr: true },
+        ]} />
+
       {incomplete && <p role="alert" className="text-sm text-danger">{t.missingFields}</p>}
       <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-muted">{t.privacy}</p>
-        <button disabled={parsing} className="h-12 shrink-0 rounded-lg bg-primary px-8 font-semibold text-on-primary transition hover:opacity-90 disabled:opacity-50">{profile ? t.save : t.finish}</button>
+        <button className="h-12 shrink-0 rounded-lg bg-primary px-8 font-semibold text-on-primary transition hover:opacity-90">{profile ? t.save : t.finish}</button>
       </div>
     </form>
     <section className="rounded-2xl border border-danger/30 bg-surface p-5 md:p-6">

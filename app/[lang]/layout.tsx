@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { IBM_Plex_Sans, IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from "next/font/google";
 import { LOCALES, getDict, isLocale } from "@/lib/i18n";
-import { LangSwitch, SearchHotkey, ThemeToggle } from "@/components/client";
+import { CloseMenus, LangSwitch, SearchHotkey, ThemeToggle } from "@/components/client";
 import { AuthSync, HeaderAccount } from "@/components/account";
 import { FirebaseAnalytics } from "@/components/firebase-analytics";
 import { MenuIcon } from "@/components/icons";
@@ -45,6 +45,7 @@ export default async function LangLayout(props: LayoutProps<"/[lang]">) {
         <FirebaseAnalytics />
         <AuthSync />
         <SearchHotkey />
+        <CloseMenus />
         <header className="sticky top-0 z-30 border-b border-line/70 bg-surface">
           <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4">
             <Link href={`/${lang}`} className="me-4 text-[17px] font-bold tracking-tight" dir="ltr">techgulf<span className="text-primary">.</span>jobs</Link>
@@ -59,7 +60,7 @@ export default async function LangLayout(props: LayoutProps<"/[lang]">) {
               <Link href={`/${lang}/saved`} className="hidden h-11 items-center rounded-lg px-3 text-sm font-medium text-muted hover:text-ink sm:inline-flex">{d.nav.saved}</Link>
               <HeaderAccount d={d} lang={lang} />
               <Link href={`/${lang}/employers`} className="ms-2 hidden h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary md:inline-flex">{d.nav.employers}</Link>
-              <details className="relative lg:hidden">
+              <details data-menu className="relative lg:hidden">
                 <summary className="grid h-11 w-11 cursor-pointer place-items-center rounded-lg text-muted" aria-label="Menu"><MenuIcon /></summary>
                 <div className="card absolute end-0 top-12 w-60 p-2">
                   {[...nav, ["saved", d.nav.saved], ["login", d.nav.login], ["employers", d.nav.employers]].map(([href, label]) => (
