@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { getCatalog, getGuidesContent, getPosts } from "@/lib/catalog";
 import { LANGS, SITE_URL } from "@/lib/seo";
 
-const STATIC = ["", "/jobs", "/companies", "/salaries", "/guides", "/blog", "/cv", "/employers", "/privacy"];
+const STATIC = ["", "/jobs", "/companies", "/salaries", "/guides", "/blog", "/cv", "/privacy"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [{ jobs, companies, cities }, posts, guides] = await Promise.all([getCatalog(), getPosts(), getGuidesContent("en")]);

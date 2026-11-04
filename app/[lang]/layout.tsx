@@ -64,11 +64,10 @@ export default async function LangLayout(props: LayoutProps<"/[lang]">) {
               <ThemeToggle label={d.theme} />
               <Link href={`/${lang}/saved`} className="hidden h-11 items-center rounded-lg px-3 text-sm font-medium text-muted hover:text-ink sm:inline-flex">{d.nav.saved}</Link>
               <HeaderAccount d={d} lang={lang} />
-              <Link href={`/${lang}/employers`} className="ms-2 hidden h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary md:inline-flex">{d.nav.employers}</Link>
               <details data-menu className="relative lg:hidden">
                 <summary className="grid h-11 w-11 cursor-pointer place-items-center rounded-lg text-muted" aria-label="Menu"><MenuIcon /></summary>
                 <div className="card absolute end-0 top-12 w-60 p-2">
-                  {[...nav, ["saved", d.nav.saved], ["login", d.nav.login], ["employers", d.nav.employers]].map(([href, label]) => (
+                  {[...nav, ["saved", d.nav.saved], ["login", d.nav.login]].map(([href, label]) => (
                     <Link key={href} href={`/${lang}/${href}`} className="flex h-11 items-center rounded-lg px-3 text-sm font-medium hover:bg-surface-2">{label}</Link>
                   ))}
                 </div>

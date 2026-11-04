@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { pageMeta } from "@/lib/seo";
 import { getDict, type Locale } from "@/lib/i18n";
 import { PageHeader } from "@/components/ui";
@@ -11,7 +12,11 @@ export async function generateMetadata(props: PageProps<"/[lang]/employers">): P
   return pageMeta(lang, "/employers", s.employersTitle, s.employersDesc);
 }
 
+// Hidden until job posting and payments work. Set to true and restore the header link to bring it back.
+const EMPLOYERS_ENABLED = false;
+
 export default async function Employers(props: PageProps<"/[lang]/employers">) {
+  if (!EMPLOYERS_ENABLED) notFound();
   const d = getDict((await props.params).lang as Locale);
   return (
     <>
