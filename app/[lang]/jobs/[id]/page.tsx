@@ -10,7 +10,7 @@ import { JobBadges, JobCard, jobPlace } from "@/components/job-card";
 import { JobAnalysisView } from "@/components/job-analysis";
 import { analyzeJob } from "@/lib/job-analysis";
 import { Logo } from "@/components/ui";
-import { ReportButton, SaveButton } from "@/components/client";
+import { SaveButton } from "@/components/client";
 import { ApplyButton } from "@/components/account";
 import { BackIcon, ShareIcon, ShieldIcon } from "@/components/icons";
 
@@ -76,10 +76,7 @@ async function JobContent({ params }: Pick<PageProps<"/[lang]/jobs/[id]">, "para
   const ApplyBlock = (
     <div className="space-y-3">
       <ApplyButton href={job.applyUrl} label={d.applyJob} lang={lang} className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary font-semibold text-on-primary" />
-      <div className="grid grid-cols-2 gap-2 [&>button]:w-full">
-        <SaveButton id={job.id} label={d.save} savedLabel={d.saved} />
-        <ReportButton t={d} />
-      </div>
+      <div className="[&>button]:w-full"><SaveButton id={job.id} label={d.save} savedLabel={d.saved} /></div>
       <p className="flex items-center justify-between gap-3 border-t border-line pt-3 text-xs text-muted">
         <span><span className="inline-block first-letter:uppercase">{d.source}</span>: <span className="font-medium capitalize text-ink">{job.source}</span></span>
         <span>{timeAgo(job.postedAt, new Date(now), d)}</span>

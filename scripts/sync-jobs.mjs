@@ -73,12 +73,17 @@ const SOURCES = [
 // Older postings are usually stale even if still listed. Matches validThrough in the job page's JSON-LD.
 const MAX_AGE_DAYS = 60;
 
+const WORKDAY_MARKETS = ["India", "United Arab Emirates", "Saudi Arabia", "Qatar", "Kuwait", "Oman", "Bahrain"];
+const WORKDAY_MAX_PER_MARKET = 100;
+
 const BOARD_URL = {
   greenhouse: (b) => `https://boards.greenhouse.io/${b}`,
   lever: (b) => `https://jobs.lever.co/${b}`,
   ashby: (b) => `https://jobs.ashbyhq.com/${b}`,
   smartrecruiters: (b) => `https://jobs.smartrecruiters.com/${b}`,
   workable: (b) => `https://apply.workable.com/${b}`,
+  recruitee: (b) => `https://${b}.recruitee.com`,
+  workday: (b) => { const [tenant, wd, site] = b.split(":"); return `https://${tenant}.${wd}.myworkdayjobs.com/${site}`; },
 };
 
 const PLACES = [
@@ -190,6 +195,40 @@ const fetchers = {
     }
     return Object.assign(raw, { listed: list.length });
   },
+  async recruitee(board) {
+    const { offers } = await getJson(`https://${board}.recruitee.com/api/offers/`);
+    return offers.map((j) => ({
+      sourceId: j.id, title: j.title, location: [j.location, j.city, j.country].filter(Boolean).join(", "), url: j.careers_url,
+      postedAt: j.published_at, remote: j.remote, description: toText(`${j.description ?? ""}\n${j.requirements ?? ""}`),
+    }));
+  },
+  // board = "tenant:wd5:site". Workday has no "all jobs" feed for a region, so search each target market.
+  async workday(board) {
+    const [tenant, wd, site] = board.split(":");
+    const host = `https://${tenant}.${wd}.myworkdayjobs.com`;
+    const api = `${host}/wday/cxs/${tenant}/${site}`;
+    const found = new Map();
+    let listed = 0;
+    for (const searchText of WORKDAY_MARKETS) {
+      for (let offset = 0; offset < WORKDAY_MAX_PER_MARKET; offset += 20) {
+        const page = await postJson(`${api}/jobs`, { appliedFacets: {}, limit: 20, offset, searchText });
+        listed += page.jobPostings?.length ?? 0;
+        for (const j of page.jobPostings ?? []) if (j.externalPath && isTech(j.title)) found.set(j.externalPath, j);
+        if (!page.jobPostings?.length || offset + 20 >= (page.total ?? 0)) break;
+      }
+    }
+    const raw = [];
+    for (const path of found.keys()) {
+      const { jobPostingInfo: j } = await getJson(`${api}${path}`);
+      if (!j) continue;
+      raw.push({
+        sourceId: j.jobReqId ?? path.split("/").pop(), title: j.title, url: j.externalUrl ?? `${host}/${site}${path}`,
+        location: [j.location, j.additionalLocations?.join(", "), j.country?.descriptor].filter(Boolean).join(", "),
+        postedAt: j.startDate, remote: /remote/i.test(j.remoteType ?? ""), description: toText(j.jobDescription),
+      });
+    }
+    return Object.assign(raw, { listed });
+  },
   async workable(board) {
     const { jobs } = await getJson(`https://apply.workable.com/api/v1/widget/accounts/${board}?details=true`);
     return jobs.map((j) => ({
@@ -205,8 +244,14 @@ function leverSalary(r) {
 }
 
 // Workable rate-limits after a few boards, so wait and retry rather than skip the company.
+async function postJson(url, body) {
+  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(30000) });
+  if (!res.ok) throw new Error(`HTTP ${res.status} from ${url}`);
+  return res.json();
+}
+
 async function getJson(url, retries = 4) {
-  const res = await fetch(url, { signal: AbortSignal.timeout(30000) });
+  const res = await fetch(url, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(30000) });
   if (res.status === 429 && retries > 0) {
     const wait = Number(res.headers.get("retry-after")) || 15 * (5 - retries);
     await new Promise((resolve) => setTimeout(resolve, wait * 1000));

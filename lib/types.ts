@@ -4,7 +4,7 @@ export type Seniority = "intern" | "junior" | "mid" | "senior" | "lead";
 export type Category =
   | "backend" | "frontend" | "data-ai" | "devops" | "security" | "erp"
   | "qa" | "network" | "product" | "support" | "other";
-export type Source = "greenhouse" | "lever" | "ashby" | "smartrecruiters" | "workable" | "workday" | "careers" | "careerjet" | "jooble" | "direct";
+export type Source = "greenhouse" | "lever" | "ashby" | "smartrecruiters" | "workable" | "workday" | "recruitee" | "careers" | "careerjet" | "jooble" | "direct";
 
 export interface Salary { min?: number; max?: number; currency: string; period: "year" | "month" }
 
