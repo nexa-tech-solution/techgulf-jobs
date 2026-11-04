@@ -127,12 +127,21 @@ export function SalaryDashboard({ d, lang, market }: { d: Dict; lang: string; ma
   const maxDemand = Math.max(...TECH_TRENDS.map((t) => Math.abs(t.demand)));
   const dateFmt = (iso: string) => new Date(iso).toLocaleDateString(lang === "ar" ? "ar-AE-u-nu-latn" : "en-GB", { day: "numeric", month: "short" });
 
+  const hasHistory = Object.keys(market.yoy).length > 0;
   const seg = (on: boolean) => `h-8 rounded-md px-3 text-sm font-medium transition ${on ? "bg-surface text-ink shadow-sm ring-1 ring-line" : "text-muted hover:text-ink"}`;
+
+  if (!SALARY_BENCHMARKS.length) return (
+    <div className="rounded-2xl border border-line bg-surface p-10 text-center">
+      <h2 className="text-lg font-semibold">{d.contribute.emptyTitle}</h2>
+      <p className="mx-auto mt-1 max-w-md text-sm text-muted">{d.contribute.emptySub}</p>
+      <a href={`/${lang}/salaries/contribute`} className="mt-5 inline-flex h-11 items-center rounded-lg bg-primary px-5 font-semibold text-on-primary">{d.contribute.cta}</a>
+    </div>
+  );
 
   return (
     <div className="space-y-12">
-      {/* ---------- Trend ---------- */}
-      <section className="rounded-2xl border border-line bg-surface">
+      {/* ---------- Trend: needs real history ---------- */}
+      {hasHistory && <section className="rounded-2xl border border-line bg-surface">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-line p-5">
           <div>
             <h2 className="text-lg font-semibold">{d.salary.trendTitle}</h2>
@@ -170,7 +179,7 @@ export function SalaryDashboard({ d, lang, market }: { d: Dict; lang: string; ma
             ))}
           </ul>
         </div>
-      </section>
+      </section>}
 
       {/* ---------- All roles ---------- */}
       <section>
@@ -193,7 +202,7 @@ export function SalaryDashboard({ d, lang, market }: { d: Dict; lang: string; ma
                 <th className="px-5 py-3 text-start font-medium">{d.role}</th>
                 <th className="px-5 py-3 text-start font-medium">{d.median}</th>
                 <th className="px-5 py-3 text-start font-medium">{d.range}</th>
-                <th className="px-5 py-3 text-end font-medium">{d.salary.yoy}</th>
+                {hasHistory && <th className="px-5 py-3 text-end font-medium">{d.salary.yoy}</th>}
               </tr>
             </thead>
             <tbody>
@@ -215,7 +224,7 @@ export function SalaryDashboard({ d, lang, market }: { d: Dict; lang: string; ma
                       </div>
                       <p className="mt-1.5 text-xs tabular-nums text-muted" dir="ltr">{money(r.p25, r, usd)} – {money(r.p75, r, usd)}</p>
                     </td>
-                    <td className="px-5 py-3.5 text-end"><Delta v={yoyOf(r.role, r.city)} /></td>
+                    {hasHistory && <td className="px-5 py-3.5 text-end"><Delta v={yoyOf(r.role, r.city)} /></td>}
                   </tr>
                 );
               })}
@@ -226,7 +235,7 @@ export function SalaryDashboard({ d, lang, market }: { d: Dict; lang: string; ma
       </section>
 
       {/* ---------- Technologies + notes ---------- */}
-      <section className="grid gap-8 lg:grid-cols-[1fr_320px]">
+      {TECH_TRENDS.length > 0 && <section className="grid gap-8 lg:grid-cols-[1fr_320px]">
         <div>
           <h2 className="text-xl font-semibold tracking-tight">{d.salary.techTitle}</h2>
           <p className="mt-0.5 text-sm text-muted">{d.salary.techSub}</p>
@@ -277,7 +286,7 @@ export function SalaryDashboard({ d, lang, market }: { d: Dict; lang: string; ma
             </ol>
           </div>
         </aside>
-      </section>
+      </section>}
     </div>
   );
 }

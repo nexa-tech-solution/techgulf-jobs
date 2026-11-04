@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "node scripts/seed-firestore.mjs",
-    "sync:jobs": "node scripts/sync-jobs.mjs"
+    "sync:jobs": "node scripts/sync-jobs.mjs",
+    "sync:salaries": "node --env-file-if-exists=.env scripts/sync-salaries.mjs"
   },
   "dependencies": {
     "firebase": "^13.2.0",

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getDict, type Locale } from "@/lib/i18n";
 import { notFound } from "next/navigation";
 import { getMarketData } from "@/lib/catalog";
@@ -16,10 +17,15 @@ export default async function Salaries(props: PageProps<"/[lang]/salaries">) {
   return (
     <>
       <PageHeader title={d.salariesTitle} sub={d.salariesSub}>
-        <p className="mt-4 inline-flex flex-wrap items-center gap-x-2 rounded-lg bg-surface-2 px-3 py-2 text-sm">
-          <span className="font-medium">{d.salary.updated} {updated}</span>
-          <span className="text-muted">· {d.salary.sample.replace("{n}", market.sampleSize.toLocaleString("en-US"))}</span>
-        </p>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          {market.benchmarks.length > 0 && (
+            <p className="inline-flex flex-wrap items-center gap-x-2 rounded-lg bg-surface-2 px-3 py-2 text-sm">
+              <span className="font-medium">{d.salary.updated} {updated}</span>
+              <span className="text-muted">· {d.salary.sample.replace("{n}", market.sampleSize.toLocaleString("en-US"))}</span>
+            </p>
+          )}
+          <Link href={`/${lang}/salaries/contribute`} className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary">{d.contribute.cta}</Link>
+        </div>
       </PageHeader>
       <div className="mx-auto max-w-6xl px-4 py-8"><SalaryDashboard d={d} lang={lang} market={market} /></div>
     </>

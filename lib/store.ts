@@ -59,7 +59,6 @@ export const actions = {
     if (jobs[id]) delete jobs[id]; else jobs[id] = "saved";
     set({ ...state, jobs });
   },
-  setStatus(id: string, s: AppStatus) { set({ ...state, jobs: { ...state.jobs, [id]: s } }); },
   /** Saving a search = creating an alert. Delivered to the account email by default. */
   saveSearch(filters: Record<string, string>) {
     const key = filterKey(filters);

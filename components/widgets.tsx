@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { actions, useStore, type Alert, type AppStatus, type Channel } from "@/lib/store";
+import { actions, useStore, type Alert, type Channel } from "@/lib/store";
 import { describeFilters } from "@/lib/describe";
 import { filterJobs } from "@/lib/jobs";
 import type { Dict, Locale } from "@/lib/i18n";
@@ -69,12 +69,11 @@ const L = ({ label, children }: { label: string; children: React.ReactNode }) =>
   <label className="block"><span className="mb-1.5 block text-sm font-medium">{label}</span>{children}</label>
 );
 
-/* ---------- Saved + application tracker ---------- */
-const STATUSES: AppStatus[] = ["saved", "applied", "interview", "offer", "rejected"];
+/* ---------- Saved jobs + alerts ---------- */
 
 export function MyJobs({ d, lang, jobs, now }: { d: Dict; lang: Locale; jobs: Job[]; now: string }) {
   const store = useStore();
-  const [tab, setTab] = useState<"saved" | "tracker" | "alerts">("saved");
+  const [tab, setTab] = useState<"saved" | "alerts">("saved");
   useEffect(() => {
     const sync = () => { if (location.hash === "#alerts") setTab("alerts"); };
     sync();
@@ -85,7 +84,7 @@ export function MyJobs({ d, lang, jobs, now }: { d: Dict; lang: Locale; jobs: Jo
   return (
     <div>
       <div className="flex gap-1 border-b border-line" role="tablist">
-        {([["saved", d.savedTab, mine.length], ["tracker", d.trackerTab, mine.filter((j) => store.jobs[j.id] !== "saved").length], ["alerts", d.account.alertsTab, store.alerts.length]] as const).map(([k, label, n]) => (
+        {([["saved", d.savedTab, mine.length], ["alerts", d.account.alertsTab, store.alerts.length]] as const).map(([k, label, n]) => (
           <button key={k} role="tab" aria-selected={tab === k} onClick={() => { setTab(k); history.replaceState(null, "", k === "alerts" ? "#alerts" : location.pathname); }}
             className={`-mb-px h-11 border-b-2 px-4 text-sm font-medium ${tab === k ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"}`}>{label} <span className="text-muted">{n}</span></button>
         ))}
@@ -95,7 +94,7 @@ export function MyJobs({ d, lang, jobs, now }: { d: Dict; lang: Locale; jobs: Jo
           <p className="text-muted">{d.emptySaved}</p>
           <Link href={`/${lang}/jobs`} className="mt-4 inline-flex h-11 items-center rounded-lg bg-primary px-5 font-semibold text-on-primary">{d.nav.jobs}</Link>
         </div>
-      ) : tab === "saved" ? (
+      ) : (
         <ul className="mt-4 space-y-2">
           {mine.map((j) => (
             <li key={j.id} className="flex items-center justify-between gap-3 card p-4">
@@ -107,23 +106,6 @@ export function MyJobs({ d, lang, jobs, now }: { d: Dict; lang: Locale; jobs: Jo
             </li>
           ))}
         </ul>
-      ) : (
-        <div className="mt-4 grid gap-3 overflow-x-auto md:grid-cols-5">
-          {STATUSES.map((s) => (
-            <div key={s} className="min-w-0 rounded-xl bg-surface p-3">
-              <p className="mb-2 text-sm font-semibold">{d.status[s]} <span className="text-muted">({mine.filter((j) => store.jobs[j.id] === s).length})</span></p>
-              <div className="space-y-2">
-                {mine.filter((j) => store.jobs[j.id] === s).map((j) => (
-                  <div key={j.id} className="rounded-lg border border-line bg-surface-2 p-3 text-sm">
-                    <Link href={`/${lang}/jobs/${j.id}`} className="font-medium hover:text-primary"><bdi>{j.title}</bdi></Link>
-                    <p className="text-xs text-muted">{j.company}</p>
-                    <Select className="mt-2 [&>button]:h-9 [&>button]:text-xs" placeholder="Status" value={s} onChange={(v) => actions.setStatus(j.id, v as AppStatus)} options={STATUSES.map((x) => ({ value: x, label: d.status[x] }))} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
       )}
     </div>
   );

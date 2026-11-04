@@ -36,6 +36,16 @@ service cloud.firestore {
       }
     }
 
+    // A person's shared salary. Stays private: only aggregates are published, by the server.
+    match /salaryReports/{uid} {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['role', 'city', 'amount', 'updatedAt'])
+        && request.resource.data.role is string && request.resource.data.role.size() < 60
+        && request.resource.data.city is string && request.resource.data.city.size() < 60
+        && request.resource.data.amount is number && request.resource.data.amount > 0;
+    }
+
     // Employers can read their own records. Only the server writes them.
     match /companyMembers/{id} {
       allow read: if request.auth != null && resource.data.uid == request.auth.uid;

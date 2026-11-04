@@ -38,3 +38,58 @@ export function medianTrend(p50: number, yoy: number, seed = 0): number[] {
   const wobble = [0.6, -0.4, 0.3, 0.8, -0.2, 0.5, -0.6, 0.2, 0.7, -0.3, 0.3, 0];
   return wobble.map((w, i) => Math.round(p50 * (1 - ((yoy / 100) * (11 - i)) / 12 + (w * (1 + (seed % 3) * 0.4)) / 100)));
 }
+
+/* ---------- User-shared salaries ---------- */
+export const SALARY_ROLES: { role: string; category: Category }[] = [
+  { role: "Backend Engineer", category: "backend" }, { role: "Frontend Engineer", category: "frontend" },
+  { role: "Mobile Engineer", category: "frontend" }, { role: "DevOps Engineer", category: "devops" },
+  { role: "Data Scientist", category: "data-ai" }, { role: "Data Engineer", category: "data-ai" },
+  { role: "Cybersecurity Analyst", category: "security" }, { role: "SAP Consultant", category: "erp" },
+  { role: "QA Engineer", category: "qa" }, { role: "Network Engineer", category: "network" },
+  { role: "Product Manager", category: "product" }, { role: "IT Support", category: "support" },
+];
+export const COUNTRY_PAY: Partial<Record<Country, { currency: string; period: "month" | "year" }>> = {
+  AE: { currency: "AED", period: "month" }, SA: { currency: "SAR", period: "month" }, QA: { currency: "QAR", period: "month" },
+  KW: { currency: "KWD", period: "month" }, OM: { currency: "OMR", period: "month" }, BH: { currency: "BHD", period: "month" },
+  IN: { currency: "INR", period: "year" },
+};
+/** Fewer people than this could expose one person's pay, so the group stays private. */
+export const MIN_REPORTS = 5;
+
+/** Rejects typos such as yearly pay in a monthly field. Bounds are AED per month. */
+export function isPlausibleSalary(amount: number, currency: string, period: string) {
+  const monthlyAed = (period === "year" ? amount / 12 : amount) * (TO_AED[currency] ?? 0);
+  return monthlyAed >= 1000 && monthlyAed <= 200000;
+}
+
+const percentile = (sorted: number[], p: number) => {
+  const i = (sorted.length - 1) * p;
+  const lo = Math.floor(i);
+  return Math.round(sorted[lo] + (sorted[Math.ceil(i)] - sorted[lo]) * (i - lo));
+};
+
+/** Reports are validated again here: Firestore rules cannot check them against these lists. */
+export function aggregateSalaries(reports: Record<string, unknown>[], cities: Record<string, unknown>[]) {
+  const countryOf = new Map(cities.map((c) => [c.name as string, c.country as Country]));
+  const groups = new Map<string, { role: string; city: string; category: Category; currency: string; period: "month" | "year"; pay: number[] }>();
+  for (const r of reports) {
+    const role = SALARY_ROLES.find((x) => x.role === r.role);
+    const city = r.city as string;
+    const pay = COUNTRY_PAY[countryOf.get(city) as Country];
+    const amount = r.amount as number;
+    if (!role || !pay || typeof amount !== "number" || !isPlausibleSalary(amount, pay.currency, pay.period)) continue;
+    const key = `${role.role} / ${city}`;
+    if (!groups.has(key)) groups.set(key, { role: role.role, city, category: role.category, ...pay, pay: [] });
+    groups.get(key)!.pay.push(amount);
+  }
+  const benchmarks = [];
+  const pending: Record<string, number> = {};
+  let sampleSize = 0;
+  for (const [key, { pay, ...g }] of groups) {
+    if (pay.length < MIN_REPORTS) { pending[key] = pay.length; continue; }
+    pay.sort((a, b) => a - b);
+    benchmarks.push({ ...g, p25: percentile(pay, 0.25), p50: percentile(pay, 0.5), p75: percentile(pay, 0.75), sample: pay.length });
+    sampleSize += pay.length;
+  }
+  return { benchmarks, sampleSize, pending };
+}
