@@ -8,7 +8,8 @@ import { formatSalary, salaryConverted, timeAgo } from "@/lib/format";
 import { JobBadges, JobCard, jobPlace } from "@/components/job-card";
 import { Logo, Tag } from "@/components/ui";
 import { ReportButton, SaveButton } from "@/components/client";
-import { BackIcon, ExternalIcon, ShareIcon, ShieldIcon } from "@/components/icons";
+import { ApplyButton } from "@/components/account";
+import { BackIcon, ShareIcon, ShieldIcon } from "@/components/icons";
 
 export async function generateMetadata(props: PageProps<"/[lang]/jobs/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -56,9 +57,7 @@ async function JobContent({ params }: Pick<PageProps<"/[lang]/jobs/[id]">, "para
 
   const ApplyBlock = (
     <div className="space-y-3">
-      <a href={job.applyUrl} target="_blank" rel="noopener nofollow" className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary font-semibold text-on-primary">
-        {d.applyOnSite} <ExternalIcon />
-      </a>
+      <ApplyButton href={job.applyUrl} label={d.applyJob} lang={lang} className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary font-semibold text-on-primary" />
       <div className="grid grid-cols-2 gap-2 [&>button]:w-full">
         <SaveButton id={job.id} label={d.save} savedLabel={d.saved} />
         <ReportButton t={d} />
@@ -131,7 +130,7 @@ async function JobContent({ params }: Pick<PageProps<"/[lang]/jobs/[id]">, "para
       {/* Sticky apply bar on mobile */}
       <div className="fixed inset-x-0 bottom-0 z-20 flex gap-2 border-t border-line bg-surface p-3 lg:hidden">
         <SaveButton id={job.id} label={d.save} savedLabel={d.saved} />
-        <a href={job.applyUrl} target="_blank" rel="noopener nofollow" className="flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-primary font-semibold text-on-primary">{d.applyOnSite} <ExternalIcon /></a>
+        <ApplyButton href={job.applyUrl} label={d.applyJob} lang={lang} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-primary font-semibold text-on-primary" />
       </div>
     </div>
   );

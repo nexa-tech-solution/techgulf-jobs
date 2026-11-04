@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { actions, useStore } from "@/lib/store";
@@ -22,15 +21,16 @@ export function SaveButton({ id, label, savedLabel, compact }: { id: string; lab
 export function LangSwitch({ label }: { label: string }) {
   const path = usePathname();
   const target = path.startsWith("/ar") ? "en" : "ar";
+  // A plain link, for a full load: the root layout owns <html lang dir>, and re-rendering it on the client drops the saved theme.
   return (
-    <Link
+    <a
       href={path.replace(/^\/(en|ar)/, `/${target}`)}
       onClick={() => { document.cookie = `lang=${target};path=/;max-age=31536000`; }}
       className="inline-flex h-11 items-center rounded-lg px-3 text-sm font-medium text-muted hover:text-ink"
       lang={target} hrefLang={target}
     >
       {label}
-    </Link>
+    </a>
   );
 }
 

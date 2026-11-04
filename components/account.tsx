@@ -6,7 +6,7 @@ import { actions, filterKey, getStoreState, useStore } from "@/lib/store";
 import type { Dict, Locale } from "@/lib/i18n";
 import type { JobFilters } from "@/lib/jobs";
 import { describeFilters } from "@/lib/describe";
-import { BellIcon, CheckIcon } from "./icons";
+import { BellIcon, CheckIcon, ExternalIcon } from "./icons";
 
 const nextParam = () => encodeURIComponent(location.pathname + location.search);
 
@@ -38,6 +38,22 @@ export function HeaderAccount({ d, lang }: { d: Dict; lang: Locale }) {
         <button onClick={signOutEverywhere} className="flex h-10 w-full items-center rounded-lg px-3 text-sm text-danger hover:bg-surface-2">{d.account.signOut}</button>
       </div>
     </details>
+  );
+}
+
+/** Opens the job's own posting. Signed-out users sign in first and return to this job. */
+export function ApplyButton({ href, label, lang, className }: { href: string; label: string; lang: Locale; className: string }) {
+  const { user } = useStore();
+  const router = useRouter();
+  return (
+    <a href={href} target="_blank" rel="noopener nofollow" className={className}
+      onClick={(e) => {
+        if (user) return;
+        e.preventDefault();
+        router.push(`/${lang}/login?next=${nextParam()}`);
+      }}>
+      {label} <ExternalIcon />
+    </a>
   );
 }
 
