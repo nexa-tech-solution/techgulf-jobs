@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -46,6 +47,7 @@ export default async function LangLayout(props: LayoutProps<"/[lang]">) {
       <head><ThemeScript code={themeScript} /></head>
       <body className="flex min-h-full flex-col">
         <FirebaseAnalytics />
+        <Analytics />
         <AuthSync />
         <SearchHotkey />
         <CloseMenus />

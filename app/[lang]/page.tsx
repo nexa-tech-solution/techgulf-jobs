@@ -9,6 +9,7 @@ import { JobCard } from "@/components/job-card";
 import { Logo } from "@/components/ui";
 import { ArrowIcon } from "@/components/icons";
 import { UserMap } from "@/components/user-map";
+import { buildLandings, isIndexable } from "@/lib/landing";
 import { CountUp, DotField } from "@/components/effects";
 
 export async function generateMetadata(props: PageProps<"/[lang]">): Promise<Metadata> {
@@ -41,6 +42,11 @@ export default async function Home(props: PageProps<"/[lang]">) {
   const topCities = cities
     .map((c) => ({ ...c, count: jobs.filter((j) => j.city === c.name).length }))
     .sort((a, b) => b.count - a.count);
+
+  // Links from the home page are how Google first finds these pages. Gulf pages come first.
+  const landings = buildLandings(jobs).filter(isIndexable);
+  const isGulf = (p: (typeof landings)[number]) => p.where.country !== "IN";
+  const popular = [...landings.filter(isGulf).slice(0, 8), ...landings.filter((p) => !isGulf(p)).slice(0, 8)];
 
   return (
     <>
@@ -148,6 +154,18 @@ export default async function Home(props: PageProps<"/[lang]">) {
           ))}
         </div>
       </Section>
+
+      {popular.length > 0 && (
+        <Section title={d.landing.popular}>
+          <div className="flex flex-wrap gap-2">
+            {popular.map((p) => {
+              const what = p.what.kind === "skill" ? p.what.skill : d.category[p.what.category];
+              const where = p.where.kind === "country" ? d.country[p.where.country] : p.where.city;
+              return <Link key={p.slug} href={`/${lang}/browse/${p.slug}`} className="rounded-full border border-line bg-surface px-3 py-1.5 text-sm hover:border-primary">{d.landing.heading.replace("{what}", what).replace("{where}", where)}</Link>;
+            })}
+          </div>
+        </Section>
+      )}
 
       <Section title={d.userMap.title} sub={d.userMap.sub}>
         <UserMap d={d} lang={lang} />

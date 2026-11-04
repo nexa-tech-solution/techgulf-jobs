@@ -15,6 +15,7 @@
     "sync:salaries": "node --env-file-if-exists=.env scripts/sync-salaries.mjs"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "firebase": "^13.2.0",
     "next": "16.4.4",
     "react": "19.3.0",

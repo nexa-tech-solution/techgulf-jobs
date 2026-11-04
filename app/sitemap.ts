@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getCatalog, getGuidesContent, getPosts } from "@/lib/catalog";
 import { BLOG_ENABLED } from "@/lib/blog";
+import { buildLandings, isIndexable } from "@/lib/landing";
 import { LANGS, SITE_URL } from "@/lib/seo";
 
 const STATIC = ["", "/jobs", "/companies", "/salaries", "/guides", ...(BLOG_ENABLED ? ["/blog"] : []), "/cv", "/privacy"];
@@ -14,6 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Pages without jobs are noindex, so they stay out of the sitemap too.
     ...companies.filter((c) => hasJobs((j) => j.companySlug === c.slug)).map((c): [string] => [`/companies/${c.slug}`]),
     ...cities.filter((c) => hasJobs((j) => j.city === c.name)).map((c): [string] => [`/cities/${c.slug}`]),
+    ...buildLandings(jobs).filter(isIndexable).map((p): [string] => [`/browse/${p.slug}`]),
     ...(guides?.career ?? []).map((g): [string, string] => [`/guides/${g.slug}`, g.updated]),
     ...(BLOG_ENABLED ? posts : []).map((p): [string, string] => [`/blog/${p.slug}`, p.date]),
   ];
