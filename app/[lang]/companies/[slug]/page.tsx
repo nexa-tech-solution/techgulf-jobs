@@ -3,18 +3,31 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getDict, type Locale } from "@/lib/i18n";
 import { getCatalog } from "@/lib/catalog";
+import { orSample, pageMeta, snippet } from "@/lib/seo";
 import { JobCard } from "@/components/job-card";
 import { Logo } from "@/components/ui";
 import { ExternalIcon } from "@/components/icons";
 
 export async function generateMetadata(props: PageProps<"/[lang]/companies/[slug]">): Promise<Metadata> {
-  const { slug } = await props.params;
+  const { lang, slug } = await props.params;
   const { jobs, companies } = await getCatalog();
   const c = companies.find((x) => x.slug === slug);
-  return c ? { title: `${c.name} careers – ${jobs.filter((j) => j.companySlug === slug).length} open tech jobs` } : {};
+  if (!c) return {};
+  const s = getDict(lang as Locale).seo;
+  const n = jobs.filter((j) => j.companySlug === slug).length;
+  // A company with no open jobs is a thin page: reachable, but kept out of search.
+  return pageMeta(lang, `/companies/${slug}`, s.companyTitle.replace("{name}", c.name).replace("{n}", String(n)), snippet(s.companyDesc.replace("{name}", c.name).replace("{about}", c.about ?? "")), n === 0);
 }
 
-export default function CompanyPage(props: PageProps<"/[lang]/companies/[slug]">) {
+export async function generateStaticParams() {
+  const { companies } = await getCatalog();
+  return orSample(companies.map((c) => ({ slug: c.slug })), { slug: "sample" });
+}
+
+export default async function CompanyPage(props: PageProps<"/[lang]/companies/[slug]">) {
+  const { slug } = await props.params;
+  // Before Suspense: once streaming starts, the response can no longer become a real 404.
+  if (!(await getCatalog()).companies.some((c) => c.slug === slug)) notFound();
   return (
     <Suspense fallback={<CompanySkeleton />}>
       <CompanyContent params={props.params} />

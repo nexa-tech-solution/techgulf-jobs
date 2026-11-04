@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getDict, type Locale } from "@/lib/i18n";
 import { getCatalog } from "@/lib/catalog";
+import { SITE_URL, orSample, pageMeta, snippet } from "@/lib/seo";
 import { formatSalary, salaryConverted, timeAgo } from "@/lib/format";
 import { JobBadges, JobCard, jobPlace } from "@/components/job-card";
 import { Logo, Tag } from "@/components/ui";
@@ -12,13 +13,21 @@ import { ApplyButton } from "@/components/account";
 import { BackIcon, ShareIcon, ShieldIcon } from "@/components/icons";
 
 export async function generateMetadata(props: PageProps<"/[lang]/jobs/[id]">): Promise<Metadata> {
-  const { id } = await props.params;
+  const { lang, id } = await props.params;
   const job = (await getCatalog()).jobs.find((j) => j.id === id);
   if (!job) return {};
-  return { title: `${job.title} at ${job.company} — ${job.city ?? "Remote"}`, description: job.description.slice(0, 155) };
+  return pageMeta(lang, `/jobs/${id}`, `${job.title} at ${job.company} — ${job.city ?? "Remote"}`, snippet(job.description));
 }
 
-export default function JobPage(props: PageProps<"/[lang]/jobs/[id]">) {
+export async function generateStaticParams() {
+  const { jobs } = await getCatalog();
+  return orSample(jobs.map((j) => ({ id: j.id })), { id: "sample" });
+}
+
+export default async function JobPage(props: PageProps<"/[lang]/jobs/[id]">) {
+  const { id } = await props.params;
+  // Before Suspense: once streaming starts, the response can no longer become a real 404.
+  if (!(await getCatalog()).jobs.some((j) => j.id === id)) notFound();
   return (
     <Suspense fallback={<div className="mx-auto h-96 max-w-6xl animate-pulse px-4 py-6" />}>
       <JobContent params={props.params} />
@@ -38,15 +47,18 @@ async function JobContent({ params }: Pick<PageProps<"/[lang]/jobs/[id]">, "para
   const conv = job.salary && salaryConverted(job.salary);
   const shareText = encodeURIComponent(`${job.title} at ${job.company} — ${job.city ?? "Remote"}`);
 
-  const jsonLd = {
+  // Google needs a country to show a job as a rich result, so jobs open worldwide get no markup.
+  const countryName = job.country && job.country !== "REMOTE" ? getDict("en").country[job.country] : null;
+  const jsonLd = countryName && {
     "@context": "https://schema.org", "@type": "JobPosting",
     title: job.title, description: job.description, datePosted: job.postedAt,
     validThrough: new Date(new Date(job.postedAt).getTime() + 60 * 864e5).toISOString(),
-    hiringOrganization: { "@type": "Organization", name: job.company, sameAs: company.careersUrl },
-    employmentType: "FULL_TIME",
+    url: `${SITE_URL}/en/jobs/${job.id}`,
+    directApply: false,
+    hiringOrganization: { "@type": "Organization", name: job.company, sameAs: company.careersUrl, ...(company.logo && { logo: company.logo }) },
     ...(job.mode === "remote"
-      ? { jobLocationType: "TELECOMMUTE", applicantLocationRequirements: [{ "@type": "Country", name: "India" }, { "@type": "Country", name: "United Arab Emirates" }] }
-      : { jobLocation: { "@type": "Place", address: { "@type": "PostalAddress", addressLocality: job.city, addressCountry: job.country } } }),
+      ? { jobLocationType: "TELECOMMUTE", applicantLocationRequirements: { "@type": "Country", name: countryName } }
+      : { jobLocation: { "@type": "Place", address: { "@type": "PostalAddress", ...(job.city && { addressLocality: job.city }), addressCountry: job.country } } }),
     ...(job.salary && { baseSalary: { "@type": "MonetaryAmount", currency: job.salary.currency, value: { "@type": "QuantitativeValue", minValue: job.salary.min, maxValue: job.salary.max, unitText: job.salary.period === "month" ? "MONTH" : "YEAR" } } }),
   };
 
@@ -71,7 +83,7 @@ async function JobContent({ params }: Pick<PageProps<"/[lang]/jobs/[id]">, "para
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 pb-28 lg:pb-6">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
+      {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />}
       <Link href={`/${lang}/jobs`} className="inline-flex h-11 items-center gap-1 text-sm text-primary"><BackIcon />{d.nav.jobs}</Link>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -100,8 +112,8 @@ async function JobContent({ params }: Pick<PageProps<"/[lang]/jobs/[id]">, "para
           <div className="mt-6 flex flex-wrap items-center gap-2 text-sm">
             <ShareIcon className="h-4 w-4 text-muted" /><span className="text-muted">{d.share}:</span>
             <a className="rounded-lg border border-line px-3 py-2 hover:border-primary" target="_blank" rel="noopener" href={`https://wa.me/?text=${shareText}`}>WhatsApp</a>
-            <a className="rounded-lg border border-line px-3 py-2 hover:border-primary" target="_blank" rel="noopener" href={`https://www.linkedin.com/sharing/share-offsite/?url=https://techgulfjobs.com/en/jobs/${job.id}`}>LinkedIn</a>
-            <a className="rounded-lg border border-line px-3 py-2 hover:border-primary" target="_blank" rel="noopener" href={`https://t.me/share/url?url=https://techgulfjobs.com/en/jobs/${job.id}&text=${shareText}`}>Telegram</a>
+            <a className="rounded-lg border border-line px-3 py-2 hover:border-primary" target="_blank" rel="noopener" href={`https://www.linkedin.com/sharing/share-offsite/?url=${SITE_URL}/en/jobs/${job.id}`}>LinkedIn</a>
+            <a className="rounded-lg border border-line px-3 py-2 hover:border-primary" target="_blank" rel="noopener" href={`https://t.me/share/url?url=${SITE_URL}/en/jobs/${job.id}&text=${shareText}`}>Telegram</a>
           </div>
         </div>
 

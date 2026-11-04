@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { IBM_Plex_Sans, IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from "next/font/google";
 import { LOCALES, getDict, isLocale } from "@/lib/i18n";
+import { SITE_URL } from "@/lib/seo";
 import { CloseMenus, LangSwitch, SearchHotkey, ThemeScript, ThemeToggle } from "@/components/client";
 import { AuthSync, HeaderAccount } from "@/components/account";
 import { FirebaseAnalytics } from "@/components/firebase-analytics";
@@ -20,9 +21,9 @@ export async function generateMetadata(props: LayoutProps<"/[lang]">): Promise<M
   const { lang } = await props.params;
   const d = getDict(isLocale(lang) ? lang : "en");
   return {
+    metadataBase: new URL(SITE_URL),
     title: { default: `TechGulf Jobs — ${d.heroTitle}`, template: "%s · TechGulf Jobs" },
     description: d.heroSub,
-    alternates: { languages: { en: "/en", ar: "/ar" } },
   };
 }
 

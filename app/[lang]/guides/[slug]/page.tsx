@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getGuidesContent } from "@/lib/catalog";
+import { orSample, pageMeta } from "@/lib/seo";
 import { getDict, type Locale } from "@/lib/i18n";
 import { CareerBlockView, GuideCover } from "@/components/career-guides";
 import { BackIcon } from "@/components/icons";
@@ -10,10 +11,18 @@ import { BackIcon } from "@/components/icons";
 export async function generateMetadata(props: PageProps<"/[lang]/guides/[slug]">): Promise<Metadata> {
   const { lang, slug } = await props.params;
   const guide = (await getGuidesContent(lang))?.career?.find((g) => g.slug === slug);
-  return guide ? { title: guide.title, description: guide.summary } : {};
+  return guide ? pageMeta(lang, `/guides/${slug}`, guide.title, guide.summary) : {};
 }
 
-export default function CareerGuidePage(props: PageProps<"/[lang]/guides/[slug]">) {
+export async function generateStaticParams() {
+  const content = await getGuidesContent("en");
+  return orSample((content?.career ?? []).map((g) => ({ slug: g.slug })), { slug: "sample" });
+}
+
+export default async function CareerGuidePage(props: PageProps<"/[lang]/guides/[slug]">) {
+  const { lang, slug } = await props.params;
+  // Before Suspense: once streaming starts, the response can no longer become a real 404.
+  if (!(await getGuidesContent(lang))?.career?.some((g) => g.slug === slug)) notFound();
   return (
     <Suspense fallback={<div className="mx-auto h-96 max-w-4xl animate-pulse px-4 py-6" />}>
       <Guide params={props.params} />

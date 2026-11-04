@@ -4,16 +4,30 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getDict, type Locale } from "@/lib/i18n";
 import { getCatalog, getMarketData } from "@/lib/catalog";
+import { orSample, pageMeta } from "@/lib/seo";
 import { CATEGORIES } from "@/lib/format";
 import { JobCard } from "@/components/job-card";
 
 export async function generateMetadata(props: PageProps<"/[lang]/cities/[city]">): Promise<Metadata> {
-  const { city } = await props.params;
-  const c = (await getCatalog()).cities.find((x) => x.slug === city);
-  return c ? { title: `IT jobs in ${c.name}` } : {};
+  const { lang, city } = await props.params;
+  const { cities, jobs } = await getCatalog();
+  const c = cities.find((x) => x.slug === city);
+  if (!c) return {};
+  const s = getDict(lang as Locale).seo;
+  const name = lang === "ar" ? c.ar : c.name;
+  const n = jobs.filter((j) => j.city === c.name).length;
+  return pageMeta(lang, `/cities/${city}`, s.cityTitle.replace("{city}", name), s.cityDesc.replace("{city}", name).replace("{n}", String(n)), n === 0);
 }
 
-export default function CityPage(props: PageProps<"/[lang]/cities/[city]">) {
+export async function generateStaticParams() {
+  const { cities } = await getCatalog();
+  return orSample(cities.map((c) => ({ city: c.slug })), { city: "sample" });
+}
+
+export default async function CityPage(props: PageProps<"/[lang]/cities/[city]">) {
+  const { city } = await props.params;
+  // Before Suspense: once streaming starts, the response can no longer become a real 404.
+  if (!(await getCatalog()).cities.some((c) => c.slug === city)) notFound();
   return (
     <Suspense fallback={<div className="mx-auto h-64 max-w-6xl animate-pulse px-4 py-12" />}>
       <CityContent params={props.params} />

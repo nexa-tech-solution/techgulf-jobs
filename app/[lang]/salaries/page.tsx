@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import { getDict, type Locale } from "@/lib/i18n";
 import { notFound } from "next/navigation";
@@ -6,7 +7,11 @@ import { getMarketData } from "@/lib/catalog";
 import { PageHeader } from "@/components/ui";
 import { SalaryDashboard } from "@/components/salaries";
 
-export const metadata: Metadata = { title: "Tech salaries in Dubai, Riyadh & Bengaluru (Nov 2026)" };
+export async function generateMetadata(props: PageProps<"/[lang]/salaries">): Promise<Metadata> {
+  const { lang } = await props.params;
+  const s = getDict(lang as Locale).seo;
+  return pageMeta(lang, "/salaries", s.salariesTitle, s.salariesDesc);
+}
 
 export default async function Salaries(props: PageProps<"/[lang]/salaries">) {
   const lang = (await props.params).lang as Locale;

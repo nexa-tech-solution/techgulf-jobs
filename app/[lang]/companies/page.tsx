@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import { getDict, type Locale } from "@/lib/i18n";
 import { getCatalog } from "@/lib/catalog";
 import type { Company, Country, Job } from "@/lib/types";
 import { PageHeader } from "@/components/ui";
 import { CompanyDirectory, type CompanyStats } from "@/components/company-directory";
 
-export const metadata: Metadata = { title: "Tech companies hiring in the Gulf & India" };
+export async function generateMetadata(props: PageProps<"/[lang]/companies">): Promise<Metadata> {
+  const { lang } = await props.params;
+  const s = getDict(lang as Locale).seo;
+  return pageMeta(lang, "/companies", s.companiesTitle, s.companiesDesc);
+}
 
 const HQ_COUNTRY: [RegExp, Country][] = [[/UAE/, "AE"], [/Saudi/, "SA"], [/Qatar/, "QA"], [/India/, "IN"]];
 

@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import { getGuidesContent } from "@/lib/catalog";
 import { getDict, type Locale } from "@/lib/i18n";
 import { PageHeader } from "@/components/ui";
 import { GuidesHub } from "@/components/guides";
 
-export const metadata: Metadata = { title: "Career guides for developers: CV, interviews, salary & visas" };
+export async function generateMetadata(props: PageProps<"/[lang]/guides">): Promise<Metadata> {
+  const { lang } = await props.params;
+  const s = getDict(lang as Locale).seo;
+  return pageMeta(lang, "/guides", s.guidesTitle, s.guidesDesc);
+}
 
 export default async function Guides(props: PageProps<"/[lang]/guides">) {
   const lang = (await props.params).lang as Locale;

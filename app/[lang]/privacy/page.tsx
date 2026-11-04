@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
-import type { Locale } from "@/lib/i18n";
+import { getDict, type Locale } from "@/lib/i18n";
+import { pageMeta } from "@/lib/seo";
 import { PRIVACY } from "@/lib/privacy";
 
-export const metadata: Metadata = { title: "Privacy policy" };
+export async function generateMetadata(props: PageProps<"/[lang]/privacy">): Promise<Metadata> {
+  const { lang } = await props.params;
+  const s = getDict(lang as Locale).seo;
+  return pageMeta(lang, "/privacy", s.privacyTitle, s.privacyDesc);
+}
 
 export default async function Privacy(props: PageProps<"/[lang]/privacy">) {
   const content = PRIVACY[(await props.params).lang as Locale];

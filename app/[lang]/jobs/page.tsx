@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import { Suspense } from "react";
 import { getDict, type Locale } from "@/lib/i18n";
 import type { JobFilters } from "@/lib/jobs";
@@ -6,7 +7,11 @@ import { getCatalog } from "@/lib/catalog";
 import type { Job } from "@/lib/types";
 import { JobsBrowser } from "@/components/jobs-browser";
 
-export const metadata: Metadata = { title: "IT jobs" };
+export async function generateMetadata(props: PageProps<"/[lang]/jobs">): Promise<Metadata> {
+  const { lang } = await props.params;
+  const s = getDict(lang as Locale).seo;
+  return pageMeta(lang, "/jobs", s.jobsTitle, s.jobsDesc);
+}
 
 export default async function JobsPage(props: PageProps<"/[lang]/jobs">) {
   const lang = (await props.params).lang as Locale;

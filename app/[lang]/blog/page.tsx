@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import Image from "next/image";
 import { Suspense } from "react";
@@ -8,7 +9,11 @@ import { getPosts } from "@/lib/catalog";
 import { PageHeader } from "@/components/ui";
 import type { Dict } from "@/lib/i18n";
 
-export const metadata: Metadata = { title: "Tech news" };
+export async function generateMetadata(props: PageProps<"/[lang]/blog">): Promise<Metadata> {
+  const { lang } = await props.params;
+  const s = getDict(lang as Locale).seo;
+  return pageMeta(lang, "/blog", s.blogTitle, s.blogDesc);
+}
 
 const fmt = (d: string, lang: Locale) => new Date(d).toLocaleDateString(lang === "ar" ? "ar-AE" : "en-GB", { day: "numeric", month: "short", year: "numeric" });
 

@@ -6,16 +6,27 @@ import { notFound } from "next/navigation";
 import { getDict, type Locale } from "@/lib/i18n";
 import { coverOf } from "@/lib/blog";
 import { getPosts } from "@/lib/catalog";
+import { orSample, pageMeta } from "@/lib/seo";
 import { Tag } from "@/components/ui";
 import { BackIcon } from "@/components/icons";
 
 export async function generateMetadata(props: PageProps<"/[lang]/blog/[slug]">): Promise<Metadata> {
-  const { slug } = await props.params;
+  const { lang, slug } = await props.params;
   const post = (await getPosts()).find((p) => p.slug === slug);
-  return post ? { title: post.title, description: post.summary, openGraph: { images: [coverOf(post)] } } : {};
+  if (!post) return {};
+  const meta = pageMeta(lang, `/blog/${slug}`, post.title, post.summary);
+  return { ...meta, openGraph: { ...meta.openGraph, type: "article", images: [coverOf(post)] } };
 }
 
-export default function BlogPost(props: PageProps<"/[lang]/blog/[slug]">) {
+export async function generateStaticParams() {
+  const posts = await getPosts();
+  return orSample(posts.map((p) => ({ slug: p.slug })), { slug: "sample" });
+}
+
+export default async function BlogPost(props: PageProps<"/[lang]/blog/[slug]">) {
+  const { slug } = await props.params;
+  // Before Suspense: once streaming starts, the response can no longer become a real 404.
+  if (!(await getPosts()).some((p) => p.slug === slug)) notFound();
   return (
     <Suspense fallback={<div className="mx-auto max-w-3xl px-4 py-8"><div className="h-[480px] animate-pulse rounded-2xl bg-surface" /></div>}>
       <PostBody params={props.params} />

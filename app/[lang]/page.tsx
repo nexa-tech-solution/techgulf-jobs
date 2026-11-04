@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import { getDict, type Locale } from "@/lib/i18n";
 import { CATEGORIES, formatSalary, timeAgo } from "@/lib/format";
@@ -6,6 +8,12 @@ import { SearchBar } from "@/components/filters";
 import { JobCard } from "@/components/job-card";
 import { Logo } from "@/components/ui";
 import { ArrowIcon } from "@/components/icons";
+
+export async function generateMetadata(props: PageProps<"/[lang]">): Promise<Metadata> {
+  const { lang } = await props.params;
+  const s = getDict(lang as Locale).seo;
+  return pageMeta(lang, "", s.homeTitle, s.homeDesc);
+}
 
 export default async function Home(props: PageProps<"/[lang]">) {
   const lang = (await props.params).lang as Locale;

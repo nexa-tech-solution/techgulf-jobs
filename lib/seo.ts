@@ -1,0 +1,29 @@
+import type { Metadata } from "next";
+
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://techgulfjobs.com").replace(/\/$/, "");
+export const LANGS = ["en", "ar"] as const;
+
+/** Title, description, canonical and hreflang for a page. `path` has no language prefix: "/jobs", or "" for home. */
+export function pageMeta(lang: string, path: string, title: string, description: string, noindex = false): Metadata {
+  const image = `/${lang}/opengraph-image`;
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `/${lang}${path}`,
+      languages: { en: `/en${path}`, ar: `/ar${path}`, "x-default": `/en${path}` },
+    },
+    openGraph: { title, description, url: `/${lang}${path}`, siteName: "TechGulf Jobs", type: "website", locale: lang === "ar" ? "ar_AE" : "en_US", images: [image] },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
+    ...(noindex && { robots: { index: false, follow: true } }),
+  };
+}
+
+/** Search results want a short snippet, not a whole job description. */
+export function snippet(text: string, max = 155) {
+  const flat = text.replace(/\s+/g, " ").trim();
+  return flat.length <= max ? flat : `${flat.slice(0, max - 1).replace(/\s\S*$/, "")}…`;
+}
+
+/** Cache Components needs at least one sample param to validate a route at build time. */
+export const orSample = <T extends object>(params: T[], sample: T) => (params.length ? params : [sample]);

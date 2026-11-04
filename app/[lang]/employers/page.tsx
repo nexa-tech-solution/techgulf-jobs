@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import { getDict, type Locale } from "@/lib/i18n";
 import { PageHeader } from "@/components/ui";
 import { PostJobForm } from "@/components/widgets";
 import { CheckIcon } from "@/components/icons";
 
-export const metadata: Metadata = { title: "Post IT jobs in the Gulf & India" };
+export async function generateMetadata(props: PageProps<"/[lang]/employers">): Promise<Metadata> {
+  const { lang } = await props.params;
+  const s = getDict(lang as Locale).seo;
+  return pageMeta(lang, "/employers", s.employersTitle, s.employersDesc);
+}
 
 export default async function Employers(props: PageProps<"/[lang]/employers">) {
   const d = getDict((await props.params).lang as Locale);
