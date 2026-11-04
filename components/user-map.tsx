@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import type { Dict, Locale } from "@/lib/i18n";
 import type { Country } from "@/lib/types";
 import { IS_SAMPLE_DATA, USER_LOCATIONS, projectPoint, type UserLocation } from "@/lib/community-map";
 import { MAP_HEIGHT, MAP_SHAPES, MAP_WIDTH } from "@/lib/map-shapes";
 
 const fmt = (n: number) => new Intl.NumberFormat("en-US").format(n);
-const MAX_RADIUS = 20;
+const MAX_RADIUS = 17;
 const MAX_USERS = Math.max(...USER_LOCATIONS.map((l) => l.users));
 // Area, not radius, carries the value.
 const radius = (users: number) => MAX_RADIUS * Math.sqrt(users / MAX_USERS);
@@ -20,15 +19,6 @@ const COUNTRIES = Object.entries(
 const TOP_SHARE = COUNTRIES[0].users;
 // Larger bubbles first, so smaller neighbours stay visible and clickable on top.
 const BUBBLES = [...USER_LOCATIONS].sort((a, b) => b.users - a.users);
-
-const HUB = USER_LOCATIONS.find((l) => l.slug === "dubai")!;
-// A gentle upward curve from the hub to each city.
-function arcPath(l: UserLocation) {
-  const a = projectPoint(HUB.lat, HUB.lon);
-  const b = projectPoint(l.lat, l.lon);
-  const lift = Math.hypot(b.x - a.x, b.y - a.y) * 0.22;
-  return `M${a.x} ${a.y}Q${(a.x + b.x) / 2} ${(a.y + b.y) / 2 - lift} ${b.x} ${b.y}`;
-}
 
 function labelProps(l: UserLocation, x: number, y: number) {
   const r = radius(l.users) + 5;
@@ -56,15 +46,21 @@ export function UserMap({ d, lang }: { d: Dict; lang: Locale }) {
           {MAP_SHAPES.map((s) => {
             const highlighted = s.code && s.code === (activeCountry ?? active?.country);
             return (
-              <path key={s.code ?? "other"} d={s.d} fill="none" strokeLinecap="round" strokeWidth={2.8}
-                stroke={s.code ? "var(--primary)" : "color-mix(in srgb, var(--ink) 30%, transparent)"} opacity={s.code ? (highlighted ? 0.95 : 0.42) : 0.6} style={{ transition: "opacity .15s" }} />
+              <path key={s.code ?? "other"} d={s.d} fill="none" strokeLinecap="round" strokeWidth={s.code ? 2.6 : 2}
+                stroke={s.code ? "var(--primary)" : "var(--ink)"} opacity={s.code ? (highlighted ? 0.6 : 0.28) : 0.09} style={{ transition: "opacity .15s" }} />
             );
           })}
-          {BUBBLES.filter((l) => l.slug !== HUB.slug).map((l) => {
-            const on = activeCity === l.slug || activeCountry === l.country;
-            return <path key={l.slug} d={arcPath(l)} fill="none" stroke="var(--primary)" strokeWidth={on ? 1.6 : 1} strokeLinecap="round" opacity={on ? 1 : 0.7} className="map-arc pointer-events-none" />;
-          })}
-          {BUBBLES.map((l, i) => {
+          {/* Seismic waves: bigger cities reach further, and the delays keep cities out of step. */}
+          <g aria-hidden className="pointer-events-none">
+            {BUBBLES.flatMap((l, i) => {
+              const { x, y } = projectPoint(l.lat, l.lon);
+              return [0, 1, 2].map((wave) => (
+                <circle key={`${l.slug}-${wave}`} cx={x} cy={y} r={radius(l.users) * 2.2 + 12} className="map-quake"
+                  style={{ animationDelay: `${(i * 0.73) % 4.2 + wave * 1.4}s` }} />
+              ));
+            })}
+          </g>
+          {BUBBLES.map((l) => {
             const { x, y } = projectPoint(l.lat, l.lon);
             const r = radius(l.users);
             const on = activeCity === l.slug || activeCountry === l.country;
@@ -73,9 +69,7 @@ export function UserMap({ d, lang }: { d: Dict; lang: Locale }) {
                 onMouseEnter={() => setActiveCity(l.slug)} onMouseLeave={() => setActiveCity(null)}
                 onFocus={() => setActiveCity(l.slug)} onBlur={() => setActiveCity(null)} onClick={() => setActiveCity(l.slug)}>
                 <circle cx={x} cy={y} r={Math.max(r, 12)} fill="transparent" />
-                <circle cx={x} cy={y} r={r * 1.7} fill="none" stroke="var(--primary)" strokeWidth={1} className="map-pulse pointer-events-none" style={{ animationDelay: `${i * 0.2}s` }} />
-                <circle cx={x} cy={y} r={r} fill="var(--primary)" fillOpacity={on ? 0.4 : 0.2} stroke="var(--primary)" strokeOpacity={0.7} strokeWidth={1} style={{ transition: "fill-opacity .15s" }} />
-                <circle cx={x} cy={y} r={2.5} fill="var(--primary)" className="map-core" />
+                <circle cx={x} cy={y} r={r} fill="var(--primary)" fillOpacity={on ? 1 : 0.85} stroke="var(--surface-2)" strokeWidth={2} style={{ transition: "fill-opacity .15s" }} />
               </g>
             );
           })}
@@ -84,7 +78,7 @@ export function UserMap({ d, lang }: { d: Dict; lang: Locale }) {
             const { x, y } = projectPoint(l.lat, l.lon);
             return (
               <text key={l.slug} {...labelProps(l, x, y)} fontSize={12} fontWeight={500} fill="var(--ink)" paintOrder="stroke" stroke="var(--surface-2)" strokeWidth={3} strokeLinejoin="round"
-                className="pointer-events-none hidden font-mono sm:block">{cityName(l)}</text>
+                className="pointer-events-none hidden sm:block">{cityName(l)}</text>
             );
           })}
         </svg>
@@ -100,11 +94,11 @@ export function UserMap({ d, lang }: { d: Dict; lang: Locale }) {
           </div>
         )}
 
-        <div className="absolute bottom-3 left-3 hidden items-center gap-3 rounded-lg border border-line bg-surface px-3 py-2 text-xs text-muted sm:flex" dir={lang === "ar" ? "rtl" : "ltr"}>
+        <div className="absolute bottom-3 left-3 hidden items-center gap-3 px-1 text-xs text-muted sm:flex" dir={lang === "ar" ? "rtl" : "ltr"}>
           <span>{t.legend}</span>
           {[5000, 25000].map((n) => (
             <span key={n} className="inline-flex items-center gap-1.5">
-              <span className="rounded-full bg-primary/70" style={{ width: radius(n) * 1.4, height: radius(n) * 1.4 }} aria-hidden />
+              <span className="rounded-full bg-primary/85" style={{ width: radius(n) * 2, height: radius(n) * 2 }} aria-hidden />
               <span dir="ltr">{fmt(n)}</span>
             </span>
           ))}
@@ -113,21 +107,20 @@ export function UserMap({ d, lang }: { d: Dict; lang: Locale }) {
 
       <div className="flex flex-col p-5">
         <p className="text-sm text-muted">{t.total}</p>
-        <p className="mt-1 font-mono text-4xl font-medium tracking-tight text-primary" dir="ltr" style={{ textAlign: "start" }}>{fmt(TOTAL)}</p>
+        <p className="mt-1 text-4xl font-bold tracking-tight" dir="ltr" style={{ textAlign: "start" }}>{fmt(TOTAL)}</p>
         <p className="mt-1 text-sm text-muted">{t.across.replace("{cities}", String(USER_LOCATIONS.length)).replace("{countries}", String(COUNTRIES.length))}</p>
         <ul className="mt-5 border-t border-line pt-2" onMouseLeave={() => setActiveCountry(null)}>
           {COUNTRIES.map((c) => (
             <li key={c.code}>
-              <Link href={`/${lang}/jobs?country=${c.code}`} className="block rounded-lg px-2 py-2 -mx-2 hover:bg-surface-2 focus-visible:bg-surface-2"
-                onMouseEnter={() => setActiveCountry(c.code)} onFocus={() => setActiveCountry(c.code)} onBlur={() => setActiveCountry(null)}>
+              <div className="py-2" onMouseEnter={() => setActiveCountry(c.code)}>
                 <span className="flex items-baseline justify-between gap-3 text-sm">
                   <span className="font-medium">{d.country[c.code]}</span>
-                  <span className="font-mono text-muted" dir="ltr">{fmt(c.users)}</span>
+                  <span className="text-muted" dir="ltr">{fmt(c.users)}</span>
                 </span>
                 <span className="mt-1.5 block h-1 rounded-full bg-line" aria-hidden>
                   <span className="block h-1 rounded-full bg-primary" style={{ width: `${(c.users / TOP_SHARE) * 100}%` }} />
                 </span>
-              </Link>
+              </div>
             </li>
           ))}
         </ul>

@@ -86,9 +86,11 @@ summary::-webkit-details-marker { display: none; }
 :root:not([data-theme="light"]) .neon-card { border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); box-shadow: 0 0 36px color-mix(in srgb, var(--primary) 14%, transparent); }
 :root:not([data-theme="light"]) .neon-panel { background-image: radial-gradient(ellipse 55% 60% at 30% 35%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 70%), radial-gradient(ellipse 45% 65% at 80% 60%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 70%); }
 }
-.map-core { filter: drop-shadow(0 0 4px var(--primary)); }
-@keyframes map-flow { to { stroke-dashoffset: -20; } }
-@keyframes map-pulse { from { transform: scale(.35); opacity: .7; } to { transform: scale(1); opacity: 0; } }
-.map-arc { stroke-dasharray: 2 8; animation: map-flow 1.6s linear infinite; }
-.map-pulse { transform-box: fill-box; transform-origin: center; animation: map-pulse 2.8s ease-out infinite; }
-@media (prefers-reduced-motion: reduce) { .map-arc, .map-pulse { animation: none; } .map-pulse { opacity: .25; } }
+/* User map: seismic waves spreading from each city */
+.map-quake {
+  fill: none; stroke: var(--primary); stroke-width: 1; vector-effect: non-scaling-stroke;
+  opacity: 0; transform-box: fill-box; transform-origin: center;
+  animation: map-quake 4.2s cubic-bezier(.2,.6,.4,1) infinite;
+}
+@keyframes map-quake { 0% { transform: scale(.2); opacity: .55; } 100% { transform: scale(1); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .map-quake { display: none; } }
