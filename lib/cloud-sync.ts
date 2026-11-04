@@ -1,0 +1,109 @@
+import { collection, deleteDoc, doc, getDoc, getDocs, getFirestore, serverTimestamp, setDoc, updateDoc, writeBatch } from "firebase/firestore";
+import { app } from "@/lib/firebase";
+import { actions, getStoreState, subscribeStore, type Alert, type AppStatus, type Profile, type State } from "@/lib/store";
+
+const db = getFirestore(app);
+
+// Firestore rejects undefined values, which optional fields can contain
+const clean = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
+const report = (error: unknown) => console.warn("Cloud sync write failed", error);
+
+const toAlert = (id: string, d: Record<string, unknown>): Alert => ({
+  id,
+  key: d.key as string,
+  filters: d.filters as Alert["filters"],
+  channels: d.channels as Alert["channels"],
+  frequency: d.frequency as Alert["frequency"],
+  createdAt: d.createdAt as string,
+});
+
+/** Merges this browser's data into the account: the account wins, and local-only items are uploaded. */
+async function hydrate(uid: string) {
+  const [userSnap, savedSnap, alertSnap] = await Promise.all([
+    getDoc(doc(db, "users", uid)),
+    getDocs(collection(db, "users", uid, "savedJobs")),
+    getDocs(collection(db, "users", uid, "alerts")),
+  ]);
+  const local = getStoreState();
+  const cloudJobs = Object.fromEntries(savedSnap.docs.map((d) => [d.id, d.data().status as AppStatus]));
+  const cloudAlerts = alertSnap.docs.map((d) => toAlert(d.id, d.data()));
+  const cloudProfile = userSnap.data()?.profile as Profile | undefined;
+
+  const newJobs = Object.entries(local.jobs).filter(([id]) => !cloudJobs[id]);
+  const newAlerts = local.alerts.filter((a) => !cloudAlerts.some((c) => c.key === a.key));
+  const profile = cloudProfile ?? local.profile;
+
+  const batch = writeBatch(db);
+  const now = serverTimestamp();
+  newJobs.forEach(([id, status]) => batch.set(doc(db, "users", uid, "savedJobs", id), { status, savedAt: now, updatedAt: now }));
+  newAlerts.forEach((a) => batch.set(doc(db, "users", uid, "alerts", a.id), { ...clean(a), active: true, updatedAt: now }));
+  if (!cloudProfile && profile) batch.set(doc(db, "users", uid), { email: local.user?.email ?? "", profile: clean(profile), updatedAt: now }, { merge: true });
+  await batch.commit();
+
+  actions.hydrate({
+    jobs: { ...cloudJobs, ...Object.fromEntries(newJobs) },
+    alerts: [...newAlerts, ...cloudAlerts].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    profile,
+  });
+}
+
+/** Writes only what changed between two store states. */
+function pushChanges(uid: string, prev: State, next: State) {
+  const now = serverTimestamp();
+  for (const [id, status] of Object.entries(next.jobs)) {
+    if (prev.jobs[id] === status) continue;
+    const times = prev.jobs[id] ? { updatedAt: now } : { savedAt: now, updatedAt: now };
+    setDoc(doc(db, "users", uid, "savedJobs", id), { status, ...times }, { merge: true }).catch(report);
+  }
+  for (const id of Object.keys(prev.jobs)) {
+    if (!next.jobs[id]) deleteDoc(doc(db, "users", uid, "savedJobs", id)).catch(report);
+  }
+  for (const alert of next.alerts) {
+    if (prev.alerts.find((a) => a.id === alert.id) === alert) continue;
+    setDoc(doc(db, "users", uid, "alerts", alert.id), { ...clean(alert), active: true, updatedAt: now }, { merge: true }).catch(report);
+  }
+  for (const alert of prev.alerts) {
+    if (!next.alerts.some((a) => a.id === alert.id)) deleteDoc(doc(db, "users", uid, "alerts", alert.id)).catch(report);
+  }
+  if (next.profile && next.profile !== prev.profile) {
+    setDoc(doc(db, "users", uid), { email: next.user?.email ?? "", profile: clean(next.profile), updatedAt: now }, { merge: true }).catch(report);
+  }
+}
+
+/** Waits for the saved profile to forget the CV, so a failure can be shown and retried. */
+export async function clearCvRecord(uid: string) {
+  try {
+    await updateDoc(doc(db, "users", uid), { "profile.cvName": "", "profile.cvPath": "", "profile.cvConsentAt": "", updatedAt: serverTimestamp() });
+  } catch (error) {
+    // No saved profile means there is no CV record to clear
+    if ((error as { code?: string }).code !== "not-found") throw error;
+  }
+}
+
+let current: { uid: string; ready: Promise<void>; stop: () => void } | null = null;
+
+export function stopCloudSync() {
+  current?.stop();
+  current = null;
+}
+
+/** Loads the account into the store, then mirrors later changes. Safe to call repeatedly for the same user. */
+export function startCloudSync(uid: string): Promise<void> {
+  if (current?.uid === uid) return current.ready;
+  stopCloudSync();
+  let unsubscribe = () => {};
+  let stopped = false;
+  const ready = hydrate(uid).then(() => {
+    if (stopped) return;
+    let prev = getStoreState();
+    unsubscribe = subscribeStore(() => {
+      const next = getStoreState();
+      // Clearing the store at sign-out must never delete the account's data
+      if (next.user?.uid !== uid) return;
+      pushChanges(uid, prev, next);
+      prev = next;
+    });
+  });
+  current = { uid, ready, stop: () => { stopped = true; unsubscribe(); } };
+  return ready;
+}

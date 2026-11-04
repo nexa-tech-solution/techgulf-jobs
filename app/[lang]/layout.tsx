@@ -80,7 +80,10 @@ export default async function LangLayout(props: LayoutProps<"/[lang]">) {
             <div className="flex flex-col gap-2">
               {nav.map(([href, label]) => <Link key={href} href={`/${lang}/${href}`} className="text-muted hover:text-ink">{label}</Link>)}
             </div>
-            <p className="text-muted">{d.footerNote}</p>
+            <div>
+              <p className="text-muted">{d.footerNote}</p>
+              <Link href={`/${lang}/privacy`} className="mt-2 inline-block text-muted hover:text-ink">{d.onboard.privacyLink}</Link>
+            </div>
           </div>
         </footer>
       </body>

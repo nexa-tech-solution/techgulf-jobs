@@ -1,15 +1,20 @@
 "use client";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { actions, useStore } from "@/lib/store";
 import type { Dict, Locale } from "@/lib/i18n";
 import { COUNTRY_CODES } from "@/lib/format";
+import { JOBS } from "@/lib/mock-data";
 import { Select } from "./select";
+import { SkillPicker } from "./skill-picker";
 import { CheckIcon, UploadIcon } from "./icons";
 
 const field = "h-11 w-full rounded-lg border border-line bg-surface px-3 text-base outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/15";
-// Simulated CV parse result (AI backend later)
-const PARSED = { title: "Full-stack Developer", years: "5-8", skills: ["React", "TypeScript", "Node.js", "AWS", "PostgreSQL", "Python", "Docker"] };
+
+// Employer keywords, so typed skills use the same spelling that job matching compares against
+const KNOWN_SKILLS = [...new Set(JOBS.flatMap((job) => job.tags))].sort((a, b) => a.localeCompare(b));
+const UPLOAD_MIN_MS = 1200;
 
 export function Onboarding({ d, lang }: { d: Dict; lang: Locale }) {
   const t = d.onboard;
@@ -19,34 +24,91 @@ export function Onboarding({ d, lang }: { d: Dict; lang: Locale }) {
   const [form, setForm] = useState(() => ({
     name: profile?.name ?? user?.name ?? "", title: profile?.title ?? "", years: profile?.years ?? "",
     location: profile?.location ?? "IN", targets: profile?.targets ?? ["AE"], needVisa: profile?.needVisa ?? true,
-    whatsapp: profile?.whatsapp ?? "", cvName: profile?.cvName ?? "", skills: profile?.skills ?? [],
+    whatsapp: profile?.whatsapp ?? "", cvName: profile?.cvName ?? "", cvPath: profile?.cvPath ?? "", cvConsentAt: profile?.cvConsentAt ?? "", skills: profile?.skills ?? [],
   }));
   const [parsing, setParsing] = useState(false);
   const [drag, setDrag] = useState(false);
+  const [uploadFailed, setUploadFailed] = useState(false);
+  const [incomplete, setIncomplete] = useState(false);
+  const [consented, setConsented] = useState(false);
+  const [consentMissing, setConsentMissing] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [accountDeleteFailed, setAccountDeleteFailed] = useState(false);
+  const accountDeleted = useRef(false);
+  const [deleteFailed, setDeleteFailed] = useState(false);
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }));
 
   // Signed-out users go to sign in first
-  useEffect(() => { if (!user) router.replace(`/${lang}/login?next=/${lang}/onboarding`); }, [user, lang, router]);
+  useEffect(() => { if (!user && !accountDeleted.current) router.replace(`/${lang}/login?next=/${lang}/onboarding`); }, [user, lang, router]);
   if (!user) return null;
   // Name comes from Google until the user edits it
   const name = form.name || user.name;
 
-  const upload = (f?: File) => {
+  const upload = async (f?: File) => {
     if (!f) return;
+    if (!consented) return setConsentMissing(true);
+    const previous = form.cvName;
     setParsing(true);
+    setUploadFailed(false);
     set({ cvName: f.name });
-    // Autofill from the CV, but never overwrite what the user already typed
-    setTimeout(() => {
-      setForm((x) => ({ ...x, title: x.title || PARSED.title, years: x.years || PARSED.years, skills: PARSED.skills }));
+    try {
+      const { uploadCv } = await import("@/lib/cv");
+      // Short minimum so the progress state doesn't flash
+      const [cv] = await Promise.all([uploadCv(user.uid, f), new Promise((done) => setTimeout(done, UPLOAD_MIN_MS))]);
+      set(cv);
+      actions.setCv(cv);
+    } catch (error) {
+      console.error("CV upload failed", error);
+      set({ cvName: previous });
       setParsing(false);
-    }, 1400);
+      setUploadFailed(true);
+      return;
+    }
+    setParsing(false);
+  };
+
+  const removeAccount = async () => {
+    setDeletingAccount(true);
+    setAccountDeleteFailed(false);
+    try {
+      const { deleteAccount } = await import("@/lib/delete-account");
+      await deleteAccount();
+      accountDeleted.current = true;
+      actions.signOut();
+      router.replace(`/${lang}`);
+    } catch (error) {
+      if ((error as { code?: string }).code !== "auth/popup-closed-by-user") {
+        console.error("Account delete failed", error);
+        setAccountDeleteFailed(true);
+      }
+      setDeletingAccount(false);
+    }
+  };
+
+  const removeCv = async () => {
+    if (!window.confirm(t.deleteCvConfirm)) return;
+    setUploadFailed(false);
+    setDeleteFailed(false);
+    try {
+      const [{ deleteCv }, { clearCvRecord }] = await Promise.all([import("@/lib/cv"), import("@/lib/cloud-sync")]);
+      await deleteCv(user.uid);
+      await clearCvRecord(user.uid);
+      actions.clearCv();
+      set({ cvName: "", cvPath: "", cvConsentAt: "" });
+    } catch (error) {
+      console.error("CV delete failed", error);
+      setDeleteFailed(true);
+    }
   };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (parsing) return;
+    if (!form.years || !form.targets.length || !form.skills.length) return setIncomplete(true);
     actions.saveProfile({ ...form, name });
     const raw = new URLSearchParams(location.search).get("next");
-    router.push(raw && raw.startsWith("/") ? raw : `/${lang}/jobs`);
+    router.push(raw && /^\/(?![/\\])/.test(raw) ? raw : `/${lang}/jobs`);
   };
 
   const label = (text: string, extra?: string) => (
@@ -54,6 +116,7 @@ export function Onboarding({ d, lang }: { d: Dict; lang: Locale }) {
   );
 
   return (
+    <div className="space-y-6">
     <form onSubmit={submit} className="space-y-6">
       {/* Account from Google */}
       <section className="rounded-2xl border border-line bg-surface p-5 md:p-6">
@@ -78,10 +141,11 @@ export function Onboarding({ d, lang }: { d: Dict; lang: Locale }) {
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-danger/10 text-[11px] font-bold text-danger">PDF</span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium" dir="ltr">{form.cvName}</p>
-              <p className="text-xs text-muted">{parsing ? t.reading : t.parsed.replace("{n}", String(form.skills.length))}</p>
+              <p className="text-xs text-muted">{parsing ? t.reading : t.cvReady}</p>
             </div>
             {parsing ? <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" aria-label={t.reading} />
               : <button type="button" onClick={() => fileRef.current?.click()} className="text-sm font-medium text-primary hover:underline">{t.replace}</button>}
+            {!parsing && <button type="button" onClick={removeCv} className="text-sm font-medium text-danger hover:underline">{t.deleteCv}</button>}
           </div>
         ) : (
           <div role="button" tabIndex={0} onClick={() => fileRef.current?.click()} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && fileRef.current?.click()}
@@ -93,22 +157,21 @@ export function Onboarding({ d, lang }: { d: Dict; lang: Locale }) {
             <p className="text-xs text-muted">PDF, DOCX · max 5 MB</p>
           </div>
         )}
-        <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" className="sr-only" onChange={(e) => upload(e.target.files?.[0])} />
-        {form.skills.length > 0 && !parsing && (
-          <div className="mt-4 flex flex-wrap gap-1.5" dir="ltr">
-            {form.skills.map((s) => (
-              <button key={s} type="button" onClick={() => set({ skills: form.skills.filter((x) => x !== s) })} title={t.removeSkill}
-                className="inline-flex h-7 items-center gap-1 rounded-md bg-primary/10 px-2 font-mono text-[12px] text-primary hover:bg-danger/10 hover:text-danger">{s} <span aria-hidden>×</span></button>
-            ))}
-          </div>
-        )}
+        <label className="mt-4 flex cursor-pointer items-start gap-2 text-sm">
+          <input type="checkbox" checked={consented} onChange={(e) => { setConsented(e.target.checked); setConsentMissing(false); }} className="mt-1 h-4 w-4 shrink-0 accent-[var(--primary)]" />
+          <span>{t.cvConsent} <Link href={`/${lang}/privacy`} target="_blank" className="text-primary hover:underline">{t.privacyLink}</Link></span>
+        </label>
+        {consentMissing && <p role="alert" className="mt-2 text-sm text-danger">{t.cvConsentRequired}</p>}
+        {uploadFailed && <p role="alert" className="mt-3 text-sm text-danger">{t.uploadError}</p>}
+        {deleteFailed && <p role="alert" className="mt-3 text-sm text-danger">{t.deleteCvError}</p>}
+        <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" className="sr-only" onChange={(e) => { upload(e.target.files?.[0]); e.target.value = ""; }} />
       </section>
 
       {/* Work */}
       <section className="rounded-2xl border border-line bg-surface p-5 md:p-6">
         <h2 className="font-semibold">{t.workTitle}</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <label className="block sm:col-span-2">{label(t.jobTitle, form.cvName && form.title ? t.fromCv : undefined)}
+          <label className="block sm:col-span-2">{label(t.jobTitle)}
             <input required value={form.title} onChange={(e) => set({ title: e.target.value })} placeholder="e.g. Senior Backend Engineer" className={field} />
           </label>
           <div>{label(t.experience)}
@@ -119,6 +182,18 @@ export function Onboarding({ d, lang }: { d: Dict; lang: Locale }) {
             <Select name="location" value={form.location} onChange={(v) => set({ location: v })} placeholder={t.choose}
               options={COUNTRY_CODES.filter((c) => c !== "REMOTE").map((c) => ({ value: c, label: d.country[c] }))} />
           </div>
+        </div>
+
+        <div className="mt-5">{label(t.skills)}
+          <SkillPicker suggestions={KNOWN_SKILLS} selected={form.skills} onAdd={(skill) => set({ skills: [...form.skills, skill] })} placeholder="React, AWS…" addLabel={t.addSkill} inputClassName={field} />
+          {form.skills.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5" dir="ltr">
+              {form.skills.map((s) => (
+                <button key={s} type="button" onClick={() => set({ skills: form.skills.filter((x) => x !== s) })} title={t.removeSkill}
+                  className="inline-flex h-7 items-center gap-1 rounded-md bg-primary/10 px-2 font-mono text-[12px] text-primary hover:bg-danger/10 hover:text-danger">{s} <span aria-hidden>×</span></button>
+              ))}
+            </div>
+          )}
         </div>
 
         <fieldset className="mt-5">
@@ -146,10 +221,25 @@ export function Onboarding({ d, lang }: { d: Dict; lang: Locale }) {
         </label>
       </section>
 
+      {incomplete && <p role="alert" className="text-sm text-danger">{t.missingFields}</p>}
       <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-muted">{t.privacy}</p>
         <button disabled={parsing} className="h-12 shrink-0 rounded-lg bg-primary px-8 font-semibold text-on-primary transition hover:opacity-90 disabled:opacity-50">{profile ? t.save : t.finish}</button>
       </div>
     </form>
+    <section className="rounded-2xl border border-danger/30 bg-surface p-5 md:p-6">
+      <h2 className="font-semibold">{t.deleteAccount}</h2>
+      <p className="mt-1 text-sm text-muted">{t.deleteAccountSub}</p>
+      {accountDeleteFailed && <p role="alert" className="mt-3 text-sm text-danger">{t.deleteAccountError}</p>}
+      {confirmingDelete ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button type="button" onClick={removeAccount} disabled={deletingAccount} className="h-11 rounded-lg bg-danger px-4 text-sm font-semibold text-white disabled:opacity-60">{t.deleteAccountConfirm}</button>
+          <button type="button" onClick={() => setConfirmingDelete(false)} disabled={deletingAccount} className="h-11 rounded-lg border border-line px-4 text-sm font-semibold">{t.keepAccount}</button>
+        </div>
+      ) : (
+        <button type="button" onClick={() => setConfirmingDelete(true)} className="mt-4 h-11 rounded-lg border border-danger/40 px-4 text-sm font-semibold text-danger hover:bg-danger/10">{t.deleteAccount}</button>
+      )}
+    </section>
+    </div>
   );
 }

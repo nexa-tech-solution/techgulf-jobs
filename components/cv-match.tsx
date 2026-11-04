@@ -5,12 +5,10 @@ import type { Dict, Locale } from "@/lib/i18n";
 import type { Job } from "@/lib/types";
 import { COMPANIES } from "@/lib/mock-data";
 import { formatSalary } from "@/lib/format";
-import { useStore } from "@/lib/store";
+import { actions, useStore } from "@/lib/store";
 import { Logo } from "./ui";
 import { CheckIcon, UploadIcon } from "./icons";
 
-// Simulated parse result until the AI backend exists
-const DETECTED = { title: "Full-stack Developer", years: 5, skills: ["React", "TypeScript", "Node.js", "AWS", "PostgreSQL", "Python", "Docker"] };
 const EXTRA = ["Kubernetes", "Go", "Kafka", "Terraform", "Next.js", "Django", "Spark", "LLM", "Java", "Spring"];
 
 function Ring({ value }: { value: number }) {
@@ -33,29 +31,70 @@ export function CvMatch({ d, lang, jobs }: { d: Dict; lang: Locale; jobs: Job[] 
   const [step, setStep] = useState(0);
   const [file, setFile] = useState<string>("");
   const [drag, setDrag] = useState(false);
-  const [skills, setSkills] = useState<string[]>(DETECTED.skills);
+  const [editedSkills, setSkills] = useState<string[] | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [consented, setConsented] = useState(false);
+  const [consentMissing, setConsentMissing] = useState(false);
+  const [deleteFailed, setDeleteFailed] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   // CV uploaded during profile setup → show results straight away
-  const { profile } = useStore();
+  const { profile, user } = useStore();
+  const [saveFailed, setSaveFailed] = useState(false);
   const [replaced, setReplaced] = useState(false);
   const useProfileCv = stage === "idle" && !!profile?.cvName && !replaced;
   const view = useProfileCv ? "done" : stage;
   const cvFile = useProfileCv ? profile!.cvName : file;
+  const foundSkills = useMemo(() => profile?.skills ?? [], [profile]);
+  const skills = useMemo(() => editedSkills ?? foundSkills, [editedSkills, foundSkills]);
 
   const start = (f?: File) => {
     if (!f) return;
+    // Only signed-in users with a profile have the file stored
+    if (user && profile && !consented) return setConsentMissing(true);
     setFile(f.name);
+    setSkills(null);
     setStage("parsing");
     setStep(0);
+    setSaveFailed(false);
+    // A signed-in user's newest CV replaces the stored one
+    if (user && profile) {
+      setSaving(true);
+      import("@/lib/cv")
+        .then(({ uploadCv }) => uploadCv(user.uid, f))
+        .then(actions.setCv)
+        .catch((error) => {
+          console.error("CV upload failed", error);
+          setSaveFailed(true);
+        })
+        .finally(() => setSaving(false));
+    }
     [1, 2, 3].forEach((s) => setTimeout(() => setStep(s), s * 650));
     setTimeout(() => setStage("done"), 2300);
+  };
+
+  const removeCv = async () => {
+    if (!user || !window.confirm(d.onboard.deleteCvConfirm)) return;
+    setDeleteFailed(false);
+    try {
+      const [{ deleteCv }, { clearCvRecord }] = await Promise.all([import("@/lib/cv"), import("@/lib/cloud-sync")]);
+      await deleteCv(user.uid);
+      await clearCvRecord(user.uid);
+      actions.clearCv();
+      setSkills(null);
+      setFile("");
+      setReplaced(true);
+      setStage("idle");
+    } catch (error) {
+      console.error("CV delete failed", error);
+      setDeleteFailed(true);
+    }
   };
 
   const scored = useMemo(() => jobs.map((j) => {
     const have = j.tags.filter((x) => skills.includes(x));
     const missing = j.tags.filter((x) => !skills.includes(x));
-    const exp = j.seniority === "senior" || j.seniority === "lead" ? 8 : 0;
-    return { j, have, missing, score: Math.min(97, Math.round(35 + (have.length / Math.max(j.tags.length, 1)) * 55 + exp)) };
+    // Share of the employer's keywords found in the CV
+    return { j, have, missing, score: Math.round((have.length / Math.max(j.tags.length, 1)) * 100) };
   }).sort((a, b) => b.score - a.score), [jobs, skills]);
 
   const gaps = useMemo(() => {
@@ -82,6 +121,13 @@ export function CvMatch({ d, lang, jobs }: { d: Dict; lang: Locale; jobs: Job[] 
           <p className="mt-1 text-sm text-muted">{t.dropSub}</p>
           <span className="mt-5 inline-flex h-11 items-center rounded-lg bg-primary px-5 font-semibold text-on-primary">{d.upload}</span>
           <p className="mt-4 text-xs text-muted">PDF, DOCX · max 5 MB</p>
+          {user && profile && (
+            <label onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} className="mt-4 flex cursor-pointer items-start gap-2 text-start text-sm">
+              <input type="checkbox" checked={consented} onChange={(e) => { setConsented(e.target.checked); setConsentMissing(false); }} className="mt-1 h-4 w-4 shrink-0 accent-[var(--primary)]" />
+              <span>{d.onboard.cvConsent} <Link href={`/${lang}/privacy`} target="_blank" className="text-primary hover:underline">{d.onboard.privacyLink}</Link></span>
+            </label>
+          )}
+          {consentMissing && <p role="alert" className="mt-2 text-sm text-danger">{d.onboard.cvConsentRequired}</p>}
           <input ref={input} type="file" accept=".pdf,.doc,.docx" className="sr-only" onChange={(e) => start(e.target.files?.[0])} />
         </div>
         <div className="rounded-2xl border border-line bg-surface p-6">
@@ -123,16 +169,21 @@ export function CvMatch({ d, lang, jobs }: { d: Dict; lang: Locale; jobs: Job[] 
   return (
     <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
       <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
+        {saveFailed && <p role="alert" className="text-sm text-danger">{d.onboard.uploadError}</p>}
+        {deleteFailed && <p role="alert" className="text-sm text-danger">{d.onboard.deleteCvError}</p>}
         <div className="rounded-2xl border border-line bg-surface p-5">
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs font-medium text-muted">{t.profile}</p>
             <button onClick={() => { setReplaced(true); setStage("idle"); }} className="text-xs font-medium text-primary hover:underline">{t.replace}</button>
           </div>
-          <p className="mt-2 text-lg font-semibold">{useProfileCv ? profile!.title : DETECTED.title}</p>
-          <p className="text-sm text-muted">{t.years.replace("{n}", String(DETECTED.years))} · <span dir="ltr">{cvFile}</span></p>
+          <div className="mt-1 flex justify-end">
+            {user && profile?.cvName && <button onClick={removeCv} disabled={saving} className="text-xs font-medium text-danger hover:underline disabled:opacity-60">{d.onboard.deleteCv}</button>}
+          </div>
+          {profile?.title && <p className="mt-2 text-lg font-semibold">{profile.title}</p>}
+          <p className="text-sm text-muted">{profile?.years && <>{t.years.replace("{n}", profile.years)} · </>}<span dir="ltr">{cvFile}</span></p>
           <p className="mt-4 text-xs font-medium text-muted">{t.yourSkills}</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {[...new Set([...DETECTED.skills, ...skills, ...EXTRA])].map((s) => {
+            {[...new Set([...foundSkills, ...skills, ...EXTRA])].map((s) => {
               const on = skills.includes(s);
               return (
                 <button key={s} type="button" aria-pressed={on} onClick={() => setSkills(on ? skills.filter((x) => x !== s) : [...skills, s])} dir="ltr"

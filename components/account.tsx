@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { actions, filterKey, useStore } from "@/lib/store";
+import { actions, filterKey, getStoreState, useStore } from "@/lib/store";
 import type { Dict, Locale } from "@/lib/i18n";
 import type { JobFilters } from "@/lib/jobs";
 import { describeFilters } from "@/lib/describe";
@@ -76,9 +76,14 @@ export function AuthSync() {
   useEffect(() => {
     let active = true;
     let unsubscribe: (() => void) | undefined;
-    import("@/lib/auth")
-      .then(({ watchAuth }) => {
-        if (active) unsubscribe = watchAuth(actions.syncAuth);
+    Promise.all([import("@/lib/auth"), import("@/lib/cloud-sync")])
+      .then(([{ watchAuth }, { startCloudSync, stopCloudSync }]) => {
+        if (!active) return;
+        unsubscribe = watchAuth((user) => {
+          actions.syncAuth(user);
+          if (user) startCloudSync(user.uid).catch((error) => console.warn("Cloud sync failed", error));
+          else stopCloudSync();
+        });
       })
       .catch((error) => console.warn("Firebase Auth failed to load", error));
     return () => {
@@ -95,19 +100,21 @@ const CANCELLED = ["auth/popup-closed-by-user", "auth/cancelled-popup-request"];
 /** Google-only sign-in. First sign-in goes to profile setup. */
 export function GoogleSignIn({ d, lang }: { d: Dict; lang: Locale }) {
   const router = useRouter();
-  const { profile } = useStore();
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
   const go = async () => {
     setPending(true);
     setFailed(false);
     try {
-      const { signInWithGoogle } = await import("@/lib/auth");
-      actions.syncAuth(await signInWithGoogle());
+      const [{ signInWithGoogle }, { startCloudSync }] = await Promise.all([import("@/lib/auth"), import("@/lib/cloud-sync")]);
+      const user = await signInWithGoogle();
+      actions.syncAuth(user);
+      // Wait for the account's profile, so returning users on a new device skip onboarding
+      await startCloudSync(user.uid).catch((error) => console.warn("Cloud sync failed", error));
       const raw = new URLSearchParams(location.search).get("next");
       // Only same-site paths: "//host" and "/\host" would leave the site
       const next = raw && /^\/(?![/\\])/.test(raw) ? raw : `/${lang}/jobs`;
-      router.push(profile ? next : `/${lang}/onboarding?next=${encodeURIComponent(next)}`);
+      router.push(getStoreState().profile ? next : `/${lang}/onboarding?next=${encodeURIComponent(next)}`);
     } catch (error) {
       if (!CANCELLED.includes((error as { code?: string }).code ?? "")) {
         console.error("Google sign-in failed", error);

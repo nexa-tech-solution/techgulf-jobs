@@ -6,7 +6,7 @@ const auth = getAuth(app);
 
 const toUser = (u: FirebaseUser): User => {
   const email = u.email ?? "";
-  return { name: u.displayName ?? email, email, provider: "google", avatarColor: "#0f766e" };
+  return { uid: u.uid, name: u.displayName ?? email, email, provider: "google", avatarColor: "#0f766e" };
 };
 
 export async function signInWithGoogle(): Promise<User> {
