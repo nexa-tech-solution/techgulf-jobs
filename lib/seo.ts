@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://techgulfjobs.com").replace(/\/$/, "");
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.techgulf-jobs.com").replace(/\/$/, "");
 export const LANGS = ["en", "ar"] as const;
 
 /** Title, description, canonical and hreflang for a page. `path` has no language prefix: "/jobs", or "" for home. */

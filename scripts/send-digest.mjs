@@ -9,7 +9,7 @@
 import { writeFileSync } from "node:fs";
 import { renderDigest } from "./email-template.mjs";
 
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://techgulfjobs.com").replace(/\/$/, "");
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.techgulf-jobs.com").replace(/\/$/, "");
 const MAX_JOBS = 5;
 // Levels that fit each experience option on the profile form.
 const LEVELS_FOR_YEARS = { "0-1": ["intern", "junior"], "1-3": ["junior", "mid"], "3-5": ["mid", "senior"], "5-8": ["mid", "senior", "lead"], "8+": ["senior", "lead"] };
