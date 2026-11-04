@@ -56,7 +56,7 @@ export function ReportButton({ t }: { t: { report: string; reportTitle: string; 
   const [done, setDone] = useState(false);
   return (
     <>
-      <button type="button" onClick={() => { setDone(false); ref.current?.showModal(); }} className="inline-flex h-11 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium text-muted hover:text-danger">
+      <button type="button" onClick={() => { setDone(false); ref.current?.showModal(); }} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium text-muted hover:text-danger">
         <FlagIcon className="h-4 w-4" /> {t.report}
       </button>
       <dialog ref={ref} className="m-auto w-[min(92vw,420px)] rounded-xl border border-line bg-surface p-0 text-ink backdrop:bg-black/50">

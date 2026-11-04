@@ -59,11 +59,14 @@ async function JobContent({ params }: Pick<PageProps<"/[lang]/jobs/[id]">, "para
       <a href={job.applyUrl} target="_blank" rel="noopener nofollow" className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary font-semibold text-on-primary">
         {d.applyOnSite} <ExternalIcon />
       </a>
-      <div className="flex gap-2">
+      <div className="grid grid-cols-2 gap-2 [&>button]:w-full">
         <SaveButton id={job.id} label={d.save} savedLabel={d.saved} />
         <ReportButton t={d} />
       </div>
-      <p className="text-xs text-muted">{d.source}: <span className="capitalize">{job.source}</span> · {timeAgo(job.postedAt, new Date(now), d)}</p>
+      <p className="flex items-center justify-between gap-3 border-t border-line pt-3 text-xs text-muted">
+        <span><span className="inline-block first-letter:uppercase">{d.source}</span>: <span className="font-medium capitalize text-ink">{job.source}</span></span>
+        <span>{timeAgo(job.postedAt, new Date(now), d)}</span>
+      </p>
     </div>
   );
 
@@ -107,10 +110,13 @@ async function JobContent({ params }: Pick<PageProps<"/[lang]/jobs/[id]">, "para
           <div className="hidden card p-4 lg:block">{ApplyBlock}</div>
           <div className="card p-4">
             <h2 className="font-semibold">{d.aboutCompany}</h2>
-            <p className="mt-2 text-sm text-muted" dir="auto">{company.about}</p>
-            <p className="mt-2 text-sm"><span className="text-muted">{d.industry}:</span> {company.industry}</p>
-            <p className="text-sm"><span className="text-muted">{d.hq}:</span> {company.hq}</p>
-            <Link href={`/${lang}/companies/${company.slug}`} className="mt-3 inline-block text-sm font-medium text-primary">{d.viewAllJobs.replace("{n}", String(jobs.filter((j) => j.companySlug === company.slug).length))}</Link>
+            {/* Companies created by the job sync have no about or industry yet */}
+            {company.about && <p className="mt-2 text-sm leading-relaxed text-muted" dir="auto">{company.about}</p>}
+            <dl className="mt-3 divide-y divide-line border-y border-line text-sm">
+              {company.industry && <div className="flex justify-between gap-4 py-2"><dt className="text-muted">{d.industry}</dt><dd className="text-end font-medium">{company.industry}</dd></div>}
+              {company.hq && <div className="flex justify-between gap-4 py-2"><dt className="text-muted">{d.hq}</dt><dd className="text-end font-medium">{company.hq}</dd></div>}
+            </dl>
+            <Link href={`/${lang}/companies/${company.slug}`} className="mt-1 flex min-h-11 items-center text-sm font-medium text-primary hover:underline">{d.viewAllJobs.replace("{n}", String(jobs.filter((j) => j.companySlug === company.slug).length))}</Link>
           </div>
         </aside>
       </div>
