@@ -9,6 +9,7 @@ import { JobCard } from "@/components/job-card";
 import { Logo } from "@/components/ui";
 import { ArrowIcon } from "@/components/icons";
 import { UserMap } from "@/components/user-map";
+import { SHOW_USER_MAP } from "@/lib/community-map";
 import { buildLandings, isIndexable } from "@/lib/landing";
 import { CountUp, DotField } from "@/components/effects";
 
@@ -167,9 +168,11 @@ export default async function Home(props: PageProps<"/[lang]">) {
         </Section>
       )}
 
-      <Section title={d.userMap.title} sub={d.userMap.sub}>
-        <UserMap d={d} lang={lang} />
-      </Section>
+      {SHOW_USER_MAP && (
+        <Section title={d.userMap.title} sub={d.userMap.sub}>
+          <UserMap d={d} lang={lang} />
+        </Section>
+      )}
 
       <div className="h-14" aria-hidden />
     </>

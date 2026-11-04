@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import { IBM_Plex_Sans, IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from "next/font/google";
 import { LOCALES, getDict, isLocale } from "@/lib/i18n";
 import { BLOG_ENABLED } from "@/lib/blog";
-import { SITE_URL } from "@/lib/seo";
+import { SITE_URL, jsonLd } from "@/lib/seo";
 import { CloseMenus, LangSwitch, SearchHotkey, ThemeScript, ThemeToggle } from "@/components/client";
 import { AuthSync, HeaderAccount } from "@/components/account";
 import { FirebaseAnalytics } from "@/components/firebase-analytics";
@@ -44,7 +44,14 @@ export default async function LangLayout(props: LayoutProps<"/[lang]">) {
   return (
     <html lang={lang} dir={lang === "ar" ? "rtl" : "ltr"} suppressHydrationWarning
       className={`${plexSans.variable} ${plexArabic.variable} ${plexMono.variable} h-full antialiased`}>
-      <head><ThemeScript code={themeScript} /></head>
+      <head>
+        <ThemeScript code={themeScript} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd([
+          { "@context": "https://schema.org", "@type": "Organization", name: "TechGulf Jobs", url: SITE_URL },
+          { "@context": "https://schema.org", "@type": "WebSite", name: "TechGulf Jobs", url: SITE_URL, inLanguage: lang,
+            potentialAction: { "@type": "SearchAction", target: `${SITE_URL}/${lang}/jobs?q={search_term_string}`, "query-input": "required name=search_term_string" } },
+        ]) }} />
+      </head>
       <body className="flex min-h-full flex-col">
         <FirebaseAnalytics />
         <Analytics />

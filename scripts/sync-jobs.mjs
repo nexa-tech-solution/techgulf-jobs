@@ -124,6 +124,10 @@ const SOURCES = [
   { ats: "workday", board: "aptiv:wd5:APTIV_CAREERS", slug: "aptiv", domain: "aptiv.com", name: "Aptiv", color: "#ea580c", hq: "Schaffhausen, Switzerland", industry: "Automotive technology", about: "Software and electronics for vehicles." },
   { ats: "workday", board: "nasdaq:wd1:Global_External_Site", slug: "nasdaq", domain: "nasdaq.com", name: "Nasdaq", color: "#0284c7", hq: "New York, USA", industry: "Financial technology", about: "Stock exchange operator and market technology." },
   { ats: "workday", board: "blackrock:wd1:BlackRock_Professional", slug: "blackrock", domain: "blackrock.com", name: "BlackRock", color: "#0f172a", hq: "New York, USA", industry: "Financial services", about: "Asset manager behind the Aladdin technology platform." },
+  { ats: "workable", board: "shipa", slug: "shipa", domain: "shipa.com", name: "Shipa", color: "#dc2626", hq: "Dubai, UAE", industry: "Logistics technology", about: "Delivery and logistics technology in the Middle East." },
+  { ats: "recruitee", board: "keyper", slug: "keyper", domain: "keyper.com", name: "Keyper", color: "#0f766e", hq: "Dubai, UAE", industry: "Proptech", about: "Rent-now-pay-later and home financing platform in the UAE." },
+  { ats: "workable", board: "alpheya", slug: "alpheya", domain: "alpheya.com", name: "Alpheya", color: "#1e3a8a", hq: "Abu Dhabi, UAE", industry: "Fintech", about: "Wealth management technology platform." },
+  { ats: "ashby", board: "thndr", slug: "thndr", domain: "thndr.app", name: "Thndr", color: "#7c3aed", hq: "Cairo, Egypt", industry: "Fintech / Investing", about: "Investing app for retail investors in the Middle East." },
 ];
 
 // Older postings are usually stale even if still listed. Matches validThrough in the job page's JSON-LD.
@@ -182,10 +186,12 @@ const toText = (html = "") => html
 const CITY_ALIAS = { Bangalore: "Bengaluru", Gurgaon: "Gurugram" };
 
 function seniorityOf(title) {
-  if (/\b(intern|graduate|trainee)\b/i.test(title)) return "intern";
+  if (/\b(intern|internship|graduate|new grad|trainee)\b/i.test(title)) return "intern";
+  if (/\b(lead|staff|principal|head|manager|director|architect|vice president|vp|chief|ciso|cto)\b/i.test(title) && !/\bassociate (product |project |program )?manager\b/i.test(title)) return "lead";
   if (/\b(junior|jr\.?|associate)\b/i.test(title)) return "junior";
-  if (/\b(lead|staff|principal|head|manager|director|architect)\b/i.test(title)) return "lead";
-  if (/\b(senior|sr\.?|sde[- ]?(3|iii))\b/i.test(title)) return "senior";
+  // Numbered grades: "Engineer III" and "SDE 3" are senior, "Engineer I" is junior.
+  if (/\b(senior|sr\.?|iii|iv|sde[- ]?3)\b/i.test(title) || /\bengineer\s+[34]\b/i.test(title)) return "senior";
+  if (/\b(engineer|developer|analyst)\s+(i|1)\b/i.test(title)) return "junior";
   return "mid";
 }
 

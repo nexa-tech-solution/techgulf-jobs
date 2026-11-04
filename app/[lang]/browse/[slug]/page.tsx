@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { getDict, type Dict, type Locale } from "@/lib/i18n";
 import { getCatalog } from "@/lib/catalog";
 import { buildLandings, cityArabic, isIndexable, topCounts, type Landing } from "@/lib/landing";
-import { orSample, pageMeta } from "@/lib/seo";
+import { breadcrumbs, jsonLd, orSample, pageMeta } from "@/lib/seo";
 import { JobCard } from "@/components/job-card";
 import { Tag } from "@/components/ui";
 import type { City } from "@/lib/types";
@@ -66,12 +66,25 @@ async function Content({ params }: Pick<PageProps<"/[lang]/browse/[slug]">, "par
   const sameKind = (p: Landing) => JSON.stringify(p.where) === JSON.stringify(page.where) || JSON.stringify(p.what) === JSON.stringify(page.what);
   const related = all.filter((p) => p.slug !== slug && isIndexable(p) && sameKind(p)).slice(0, 8);
 
+  // Written from this page's own jobs, so it is accurate and differs from page to page.
+  const week = page.jobs.filter((j) => new Date(now).getTime() - new Date(j.postedAt).getTime() < 7 * 864e5).length;
+  const names = hiring.slice(0, 3).map(([s]) => companies.find((c) => c.slug === s)?.name ?? s).join(", ");
+  const topLevel = topCounts(page.jobs.map((j) => j.seniority), 1)[0]?.[0] as keyof Dict["level"] | undefined;
+  const intro = [
+    names && t.introHiring.replace("{names}", names),
+    topLevel && t.introLevel.replace("{level}", d.level[topLevel]),
+    skills.length >= 2 && t.introSkills.replace("{skills}", skills.slice(0, 3).map(([s]) => s).join(", ")),
+    week > 0 && t.introWeek.replace("{n}", String(week)),
+  ].filter(Boolean).join(" ");
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbs([[d.nav.jobs, `/${lang}/jobs`], [t.heading.replace("{what}", what).replace("{where}", where), `/${lang}/browse/${slug}`]])) }} />
       <div className="border-b border-line bg-surface">
         <div className="mx-auto max-w-6xl px-4 py-10">
           <h1 className="text-[28px] font-bold tracking-tight md:text-[40px]">{t.heading.replace("{what}", what).replace("{where}", where)}</h1>
           <p className="mt-2 max-w-2xl text-muted">{t.sub.replace("{n}", String(page.jobs.length)).replace("{companies}", String(new Set(page.jobs.map((j) => j.companySlug)).size))}</p>
+          {intro && <p className="mt-3 max-w-3xl text-[15px] leading-relaxed">{intro}</p>}
         </div>
       </div>
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6 lg:grid-cols-[1fr_300px]">

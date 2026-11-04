@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getDict, type Locale } from "@/lib/i18n";
 import { getCatalog } from "@/lib/catalog";
-import { SITE_URL, orSample, pageMeta, snippet } from "@/lib/seo";
+import { SITE_URL, breadcrumbs, jsonLd as toJsonLd, orSample, pageMeta, snippet } from "@/lib/seo";
 import { formatSalary, salaryConverted, timeAgo } from "@/lib/format";
 import { JobBadges, JobCard, jobPlace } from "@/components/job-card";
 import { JobAnalysisView } from "@/components/job-analysis";
@@ -86,6 +86,7 @@ async function JobContent({ params }: Pick<PageProps<"/[lang]/jobs/[id]">, "para
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 pb-28 lg:pb-6">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(breadcrumbs([[d.nav.jobs, `/${lang}/jobs`], [job.title, `/${lang}/jobs/${job.id}`]])) }} />
       {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />}
       <Link href={`/${lang}/jobs`} className="inline-flex h-11 items-center gap-1 text-sm text-primary"><BackIcon />{d.nav.jobs}</Link>
 

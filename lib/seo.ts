@@ -19,6 +19,14 @@ export function pageMeta(lang: string, path: string, title: string, description:
   };
 }
 
+/** Safe to place inside a script tag. */
+export const jsonLd = (data: object) => JSON.stringify(data).replace(/</g, "\\u003c");
+
+export const breadcrumbs = (items: [string, string][]) => ({
+  "@context": "https://schema.org", "@type": "BreadcrumbList",
+  itemListElement: items.map(([name, path], i) => ({ "@type": "ListItem", position: i + 1, name, item: `${SITE_URL}${path}` })),
+});
+
 /** Search results want a short snippet, not a whole job description. */
 export function snippet(text: string, max = 155) {
   const flat = text.replace(/\s+/g, " ").trim();
