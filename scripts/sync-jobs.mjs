@@ -84,7 +84,10 @@ const CATEGORIES = [
 const NON_TECH = /\b(sales|marketing|recruit\w*|talent|legal|finance|account(ant|ing)|customer success|business development|hr|human resources|martech|regional security)\b/i;
 
 const TAGS = ["React", "Next.js", "TypeScript", "JavaScript", "Node.js", "Python", "Java", "Kotlin", "Swift", "Go", "Rust", ".NET", "C#", "Flutter", "Android", "iOS", "AWS", "Azure", "GCP", "Kubernetes", "Docker", "Terraform", "Kafka", "PostgreSQL", "MySQL", "MongoDB", "Redis", "Spark", "Databricks", "PyTorch", "TensorFlow", "LLM", "SQL", "SAP", "Selenium", "Cypress"];
-const tagRe = (t) => new RegExp(`(^|[^a-z0-9+#.])${t.replace(/[.+#]/g, "\\$&")}($|[^a-z0-9+#])`, t === "Go" ? "" : "i");
+// "Go" must not match prose such as "Go-to-market" or "Go to".
+const tagRe = (t) => (t === "Go"
+  ? /(^|[^A-Za-z0-9+#.])Go(?![- ]to\b)($|[^A-Za-z0-9+#])/
+  : new RegExp(`(^|[^a-z0-9+#.])${t.replace(/[.+#]/g, "\\$&")}($|[^a-z0-9+#])`, "i"));
 
 const toText = (html = "") => html
   .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&")

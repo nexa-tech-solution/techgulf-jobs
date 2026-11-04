@@ -19,7 +19,7 @@ function Ring({ value }: { value: number }) {
         <circle cx="28" cy="28" r={r} fill="none" stroke="var(--primary)" strokeWidth="5" strokeLinecap="round"
           strokeDasharray={c} strokeDashoffset={c * (1 - value / 100)} className="transition-[stroke-dashoffset] duration-500" />
       </svg>
-      <span className="text-sm font-semibold tabular-nums" dir="ltr">{value}%</span>
+      <span className="text-xs font-semibold tabular-nums tracking-tight" dir="ltr">{value}%</span>
     </div>
   );
 }
@@ -35,7 +35,8 @@ export function CvMatch({ d, lang, jobs }: { d: Dict; lang: Locale; jobs: Job[] 
     const have = j.tags.filter((x) => skills.includes(x));
     const missing = j.tags.filter((x) => !skills.includes(x));
     // Share of the employer's keywords among the chosen skills
-    return { j, have, missing, score: Math.round((have.length / Math.max(j.tags.length, 1)) * 100) };
+    return { j, have, missing, // At least 3 tags in the divisor: one matching tag is not a 100% match.
+    score: Math.round((have.length / Math.max(j.tags.length, 3)) * 100) };
   }).sort((a, b) => b.score - a.score), [jobs, skills]);
 
   const gaps = useMemo(() => {

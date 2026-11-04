@@ -45,8 +45,8 @@ const en = {
   pricing: "Pricing", perPost: "/ job / 30 days", perMonthLong: "/ month", choose: "Get started", postJob: "Post a job", postFree: "Post a job for free",
   plans: [
     { name: "Free", price: "$0", unit: "", items: ["1 active job", "Listed in search", "Google for Jobs"] },
-    { name: "Featured", price: "$99–299", unit: "/ job / 30 days", items: ["Pinned to top", "Gold Featured badge", "Pushed to WhatsApp channels", "3× more views"], highlight: true },
-    { name: "Hiring pack", price: "$300–1,000", unit: "/ month", items: ["Unlimited jobs", "CV database access", "XML / ATS feed import", "Company page branding"] },
+    { name: "Featured", price: "$19", unit: "/ job / 30 days", items: ["Pinned to top", "Gold Featured badge", "Listed in search", "Google for Jobs"], highlight: true },
+    { name: "Hiring pack", price: "$49", unit: "/ month", items: ["Up to 5 active jobs", "All 5 jobs Featured", "Company page", "Cancel any time"] },
   ],
   form: { title: "Job title", company: "Company", location: "Location", salaryMin: "Salary min", salaryMax: "Salary max", currency: "Currency", description: "Description", applyUrl: "Apply URL or email", visaOffered: "We sponsor visas", submit: "Submit for review", submitted: "Thanks! We'll review your job within 24 hours." },
   blogTitle: "Tech news", blogSub: "What is happening in tech across the Gulf and India — AI, dev tools, security and careers.",
@@ -109,8 +109,8 @@ const ar: Dict = {
   pricing: "الأسعار", perPost: "/ وظيفة / 30 يوماً", perMonthLong: "/ شهرياً", choose: "ابدأ الآن", postJob: "انشر وظيفة", postFree: "انشر وظيفة مجاناً",
   plans: [
     { name: "مجاني", price: "$0", unit: "", items: ["وظيفة واحدة نشطة", "الظهور في البحث", "Google for Jobs"] },
-    { name: "مميزة", price: "$99–299", unit: "/ وظيفة / 30 يوماً", items: ["تثبيت في الأعلى", "شارة ذهبية", "النشر في قنوات واتساب", "مشاهدات أكثر 3 مرات"], highlight: true },
-    { name: "باقة التوظيف", price: "$300–1,000", unit: "/ شهرياً", items: ["وظائف غير محدودة", "الوصول لقاعدة السير الذاتية", "استيراد XML / ATS", "صفحة شركة مخصصة"] },
+    { name: "مميزة", price: "$19", unit: "/ وظيفة / 30 يوماً", items: ["تثبيت في الأعلى", "شارة ذهبية", "الظهور في البحث", "Google for Jobs"], highlight: true },
+    { name: "باقة التوظيف", price: "$49", unit: "/ شهرياً", items: ["حتى 5 وظائف نشطة", "جميع الوظائف الخمس مميزة", "صفحة الشركة", "إلغاء في أي وقت"] },
   ],
   form: { title: "المسمى الوظيفي", company: "الشركة", location: "الموقع", salaryMin: "أدنى راتب", salaryMax: "أعلى راتب", currency: "العملة", description: "الوصف", applyUrl: "رابط التقديم أو البريد", visaOffered: "نوفر كفالة التأشيرة", submit: "إرسال للمراجعة", submitted: "شكراً! سنراجع الوظيفة خلال 24 ساعة." },
   blogTitle: "أخبار التقنية", blogSub: "ما يحدث في عالم التقنية في الخليج والهند — الذكاء الاصطناعي والتطوير والأمن والمسار المهني.",
