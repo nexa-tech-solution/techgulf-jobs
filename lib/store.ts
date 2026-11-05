@@ -23,9 +23,11 @@ export interface Profile {
 export const filterKey = (f: Record<string, string | undefined>) =>
   Object.entries(f).filter(([k, v]) => v && k !== "sort").sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}=${v}`).join("&");
 
-export type State = { jobs: Record<string, AppStatus>; alerts: Alert[]; user: User | null; profile: Profile | null };
+/** The source written in the CV editor. */
+export interface CvDraft { source: string; updatedAt: string }
+export type State = { jobs: Record<string, AppStatus>; alerts: Alert[]; user: User | null; profile: Profile | null; cv: CvDraft | null };
 const KEY = "tgj:v3";
-const EMPTY: State = { jobs: {}, alerts: [], user: null, profile: null };
+const EMPTY: State = { jobs: {}, alerts: [], user: null, profile: null, cv: null };
 let state: State = EMPTY;
 let loaded = false;
 const listeners = new Set<() => void>();
@@ -75,7 +77,8 @@ export const actions = {
   removeAlert(id: string) { set({ ...state, alerts: state.alerts.filter((a) => a.id !== id) }); },
   /** The account keeps this data in Firestore, so the browser holds no copy after sign-out. */
   signOut() { set(EMPTY); },
-  hydrate(data: Pick<State, "jobs" | "alerts" | "profile">) { set({ ...state, ...data }); },
+  hydrate(data: Pick<State, "jobs" | "alerts" | "profile" | "cv">) { set({ ...state, ...data }); },
+  saveCv(source: string) { set({ ...state, cv: { source, updatedAt: new Date().toISOString() } }); },
   /** Aligns the store with the Firebase session. Keeps an edited name for the same account. */
   syncAuth(user: User | null) {
     load();

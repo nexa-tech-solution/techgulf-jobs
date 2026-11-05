@@ -5,12 +5,13 @@ interface PrivacyContent { title: string; updated: string; sections: { heading: 
 export const PRIVACY: Record<Locale, PrivacyContent> = {
   en: {
     title: "Privacy policy",
-    updated: "Last updated: 4 November 2026",
+    updated: "Last updated: 5 November 2026",
     sections: [
       { heading: "What we collect", items: [
         "Your Google account name and email when you sign in.",
         "The profile you enter: job title, experience, location, target countries, visa needs, skills, summary, work history, education, languages, certifications, and optional WhatsApp number, LinkedIn and portfolio links.",
         "Jobs you save, your application statuses and your job alerts.",
+        "The CV you write in the CV editor. It stays in your browser, and in your account if you sign in. We don't send it to employers.",
         "Usage, performance and error data, such as pages viewed, device, browser and approximate location.",
       ] },
       { heading: "How we use it", items: [
@@ -34,12 +35,13 @@ export const PRIVACY: Record<Locale, PrivacyContent> = {
   },
   ar: {
     title: "سياسة الخصوصية",
-    updated: "آخر تحديث: 4 نوفمبر 2026",
+    updated: "آخر تحديث: 5 نوفمبر 2026",
     sections: [
       { heading: "ما نجمعه", items: [
         "اسمك وبريدك في حساب Google عند تسجيل الدخول.",
         "الملف الذي تدخله: المسمى الوظيفي والخبرة والموقع والدول المستهدفة واحتياج التأشيرة والمهارات والملخص والخبرة العملية والتعليم واللغات والشهادات، إضافة إلى رقم واتساب وروابط LinkedIn ومعرض الأعمال الاختيارية.",
         "الوظائف التي تحفظها وحالات طلباتك وتنبيهات الوظائف.",
+        "السيرة الذاتية التي تكتبها في المحرر. تبقى في متصفحك، وفي حسابك إذا سجّلت الدخول. لا نرسلها إلى أصحاب العمل.",
         "بيانات الاستخدام والأداء والأخطاء، مثل الصفحات المعروضة والجهاز والمتصفح والموقع التقريبي.",
       ] },
       { heading: "كيف نستخدمها", items: [

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { pageMeta } from "@/lib/seo";
 import { getDict, type Locale } from "@/lib/i18n";
 import { getCatalog } from "@/lib/catalog";
@@ -17,7 +18,9 @@ export default async function Cv(props: PageProps<"/[lang]/cv">) {
   const { jobs } = await getCatalog();
   return (
     <>
-      <PageHeader title={d.cvTitle} sub={d.cvSub} />
+      <PageHeader title={d.cvTitle} sub={d.cvSub}>
+        <Link href={`/${lang}/cv/editor`} className="mt-4 inline-flex h-11 items-center rounded-lg border border-line bg-surface px-4 text-sm font-semibold hover:border-primary">{d.cvEditor.open}</Link>
+      </PageHeader>
       <div className="mx-auto max-w-6xl px-4 py-8"><CvMatch d={d} lang={lang} jobs={jobs} /></div>
     </>
   );

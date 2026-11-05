@@ -4,7 +4,7 @@ import { BLOG_ENABLED } from "@/lib/blog";
 import { buildLandings, isIndexable } from "@/lib/landing";
 import { LANGS, SITE_URL } from "@/lib/seo";
 
-const STATIC = ["", "/jobs", "/companies", "/salaries", "/guides", ...(BLOG_ENABLED ? ["/blog"] : []), "/cv", "/privacy"];
+const STATIC = ["", "/jobs", "/companies", "/salaries", "/guides", ...(BLOG_ENABLED ? ["/blog"] : []), "/cv", "/cv/editor", "/privacy"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [{ jobs, companies, cities }, posts, guides] = await Promise.all([getCatalog(), getPosts(), getGuidesContent("en")]);

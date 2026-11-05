@@ -98,3 +98,93 @@ summary::-webkit-details-marker { display: none; }
 @media (min-width: 1024px) {
   .jobs-aside { position: sticky; top: calc(4rem + var(--filter-bar, 15rem) + 1.5rem); align-self: start; }
 }
+/* CV editor. Paper stays white in dark mode because it shows what will be printed. */
+.cv-pane-code { width: 100%; }
+@media (min-width: 768px) { .cv-pane-code { width: var(--cv-split); flex: none; } }
+.cv-paper-screen {
+  box-sizing: border-box; width: 210mm; min-height: 297mm; padding: 15mm; background-color: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / .25);
+  /* Approximate page ends: each printed page holds 267mm of content between its 15mm margins */
+  background-image: linear-gradient(#fff, #fff), linear-gradient(to bottom, transparent calc(100% - 1px), #cbd5e1 calc(100% - 1px));
+  background-size: 100% 16mm, 100% 267mm; background-position: 0 0, 0 15mm; background-repeat: no-repeat, repeat-y;
+}
+.cv-print-root { display: none; }
+@media print {
+  body:has(> .cv-print-root) > :not(.cv-print-root) { display: none !important; }
+  body:has(> .cv-print-root) { display: block; background: #fff; }
+  .cv-print-root { display: block; }
+}
+.cv-doc { color: #1e293b; font-size: 10.5pt; line-height: 1.45; text-align: start; font-feature-settings: normal; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+.cv-doc p { line-height: inherit; margin: 0 0 1.5mm; }
+.cv-doc h1, .cv-doc h2, .cv-doc h3 { line-height: 1.25; }
+.cv-doc a { color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--cv-accent) 60%, transparent); text-underline-offset: 2px; }
+.cv-doc h1 { font-size: 24pt; font-weight: 700; color: #0f172a; letter-spacing: -.01em; }
+.cv-doc h2 { margin: 5mm 0 2mm; font-size: 12pt; font-weight: 700; color: var(--cv-accent); break-after: avoid; }
+.cv-doc h3 { margin: 3mm 0 1mm; font-size: 10.5pt; font-weight: 600; break-after: avoid; }
+.cv-doc ul, .cv-doc ol { margin: 0 0 2mm; padding-inline-start: 5mm; }
+.cv-doc ul { list-style: disc; } .cv-doc ol { list-style: decimal; }
+.cv-doc li { margin-bottom: .8mm; } .cv-doc li > ul, .cv-doc li > ol { margin: .8mm 0 0; }
+.cv-doc li::marker { color: var(--cv-accent); }
+.cv-headline { font-size: 12pt; color: #475569; }
+.cv-contacts { display: flex; flex-wrap: wrap; gap: 0 4mm; font-size: 9.5pt; color: #475569; }
+.cv-entry { margin-top: 2.5mm; break-inside: avoid; break-after: avoid; }
+.cv-entry-row { display: flex; justify-content: space-between; gap: 4mm; margin-bottom: .3mm !important; }
+.cv-date { flex: none; font-size: 9.5pt; color: #475569; unicode-bidi: isolate; direction: ltr; }
+.cv-org { color: #475569; }
+.cv-pagebreak { break-after: page; }
+.cv-classic { font-family: Georgia, "Times New Roman", var(--font-plex-arabic), serif; }
+.cv-classic header { text-align: center; }
+.cv-classic .cv-contacts { justify-content: center; }
+.cv-classic h2 { padding-bottom: 1mm; border-bottom: .3mm solid var(--cv-accent); font-size: 11pt; letter-spacing: .08em; text-transform: uppercase; }
+html[lang] .cv-classic[dir="rtl"] h2 { letter-spacing: 0; }
+.cv-modern { font-family: var(--font-plex-sans), var(--font-plex-arabic), system-ui, sans-serif; }
+.cv-modern header { padding-inline-start: 4mm; border-inline-start: 1.5mm solid var(--cv-accent); }
+.cv-modern h1 { color: var(--cv-accent); }
+.cv-modern h2 { display: flex; align-items: center; gap: 3mm; }
+.cv-modern h2::after { content: ""; flex: 1; height: .25mm; background: #cbd5e1; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+.cv-compact { font-family: var(--font-plex-sans), var(--font-plex-arabic), system-ui, sans-serif; font-size: 9.5pt; line-height: 1.35; }
+.cv-compact header { display: grid; gap: .5mm; padding-bottom: 2mm; border-bottom: .5mm solid #0f172a; }
+.cv-compact h1 { font-size: 18pt; }
+.cv-compact .cv-headline { font-size: 10pt; margin: 0; }
+.cv-compact .cv-contacts { font-size: 8.5pt; margin: 0; }
+.cv-compact h2 { margin: 3mm 0 1mm; font-size: 10pt; letter-spacing: .04em; }
+.cv-compact .cv-entry { margin-top: 1.5mm; }
+.cv-compact li { margin-bottom: .3mm; }
+.cv-personal { display: flex; flex-wrap: wrap; gap: 0 4mm; font-size: 9.5pt; color: #334155; }
+.cv-gulf { font-family: var(--font-plex-sans), var(--font-plex-arabic), system-ui, sans-serif; }
+.cv-gulf header { padding-bottom: 2mm; border-bottom: .6mm solid var(--cv-accent); }
+.cv-gulf h2 { font-size: 11pt; text-transform: uppercase; letter-spacing: .05em; }
+.cv-gulf[dir="rtl"] h2 { letter-spacing: 0; }
+.cv-bilingual { font-family: var(--font-plex-sans), var(--font-plex-arabic), system-ui, sans-serif; }
+.cv-bilingual header { text-align: center; }
+.cv-bilingual .cv-contacts, .cv-bilingual .cv-personal { justify-content: center; }
+.cv-bilingual h2 { padding: .8mm 2mm; background: color-mix(in srgb, var(--cv-accent) 10%, #fff); font-size: 10.5pt; }
+.cv-executive { font-family: Georgia, "Times New Roman", var(--font-plex-arabic), serif; font-size: 11pt; }
+.cv-executive h1 { font-size: 28pt; font-weight: 400; }
+.cv-executive .cv-headline { color: var(--cv-accent); font-size: 13pt; }
+.cv-executive h2 { margin-top: 7mm; font-size: 13pt; font-weight: 400; color: #0f172a; border-bottom: .2mm solid #94a3b8; padding-bottom: 1mm; }
+.cv-engineer { font-family: var(--font-plex-sans), var(--font-plex-arabic), system-ui, sans-serif; font-size: 9.5pt; line-height: 1.35; }
+.cv-engineer h1 { font-size: 20pt; }
+.cv-engineer .cv-headline { font-size: 10pt; margin: 0; }
+.cv-engineer .cv-contacts { font-size: 8.5pt; }
+.cv-engineer h2 { margin: 3mm 0 1mm; font-family: var(--font-mono), monospace; font-size: 10pt; font-weight: 500; border-bottom: .2mm solid var(--cv-accent); }
+.cv-engineer .cv-entry { margin-top: 1.5mm; }
+.cv-fresher { font-family: var(--font-plex-sans), var(--font-plex-arabic), system-ui, sans-serif; font-size: 10pt; }
+.cv-fresher header { text-align: center; }
+.cv-fresher .cv-contacts { justify-content: center; }
+.cv-fresher h1 { font-size: 20pt; }
+.cv-fresher h2 { margin: 3.5mm 0 1.5mm; font-size: 10.5pt; color: #0f172a; border-bottom: .3mm solid #0f172a; }
+.cv-minimal { font-family: Arial, Helvetica, var(--font-plex-arabic), sans-serif; color: #000; --cv-accent: #000 !important; }
+.cv-minimal h1 { font-size: 18pt; color: #000; }
+.cv-minimal .cv-headline, .cv-minimal .cv-contacts, .cv-minimal .cv-personal, .cv-minimal .cv-date, .cv-minimal .cv-org { color: #000; }
+.cv-minimal h2 { font-size: 11pt; color: #000; }
+.cv-minimal a { text-decoration-color: #000; }
+.cv-sidebar { font-family: var(--font-plex-sans), var(--font-plex-arabic), system-ui, sans-serif; font-size: 10pt; }
+.cv-sidebar h1 { color: var(--cv-accent); }
+.cv-columns { display: grid; grid-template-columns: 52mm minmax(0, 1fr); gap: 6mm; margin-top: 3mm; }
+.cv-main { grid-column: 2; grid-row: 1; }
+.cv-side { grid-column: 1; grid-row: 1; padding-inline-end: 4mm; border-inline-end: .2mm solid #cbd5e1; }
+.cv-main > h2:first-child, .cv-side > h2:first-child { margin-top: 0; }
+.cv-print-table { width: 100%; border-collapse: collapse; }
+.cv-print-table td { padding: 0 15mm; }
+.cv-print-table .cv-print-gap { height: 15mm; padding: 0; }

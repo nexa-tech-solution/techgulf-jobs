@@ -1,6 +1,6 @@
 import { collection, deleteDoc, doc, getDoc, getDocs, getFirestore, serverTimestamp, setDoc, writeBatch } from "firebase/firestore";
 import { app } from "@/lib/firebase";
-import { actions, getStoreState, subscribeStore, type AppStatus, type Profile, type State } from "@/lib/store";
+import { actions, getStoreState, subscribeStore, type AppStatus, type CvDraft, type Profile, type State } from "@/lib/store";
 
 const db = getFirestore(app);
 
@@ -20,11 +20,15 @@ async function hydrate(uid: string) {
 
   const newJobs = Object.entries(local.jobs).filter(([id]) => !cloudJobs[id]);
   const profile = cloudProfile ?? local.profile;
+  // A CV is one long text that can't be merged, so the most recent edit is kept whichever device made it.
+  const cloudCv = userSnap.data()?.cv as CvDraft | undefined;
+  const cv = cloudCv && (!local.cv || cloudCv.updatedAt >= local.cv.updatedAt) ? cloudCv : local.cv;
 
   const batch = writeBatch(db);
   const now = serverTimestamp();
   newJobs.forEach(([id, status]) => batch.set(doc(db, "users", uid, "savedJobs", id), { status, savedAt: now, updatedAt: now }));
   if (!cloudProfile && profile) batch.set(doc(db, "users", uid), { email: local.user?.email ?? "", profile: clean(profile), updatedAt: now }, { merge: true });
+  if (cv && cv !== cloudCv) batch.set(doc(db, "users", uid), { email: local.user?.email ?? "", cv, updatedAt: now }, { merge: true });
   await batch.commit();
 
   actions.hydrate({
@@ -32,6 +36,7 @@ async function hydrate(uid: string) {
     // Alerts were retired: this also clears any still saved in this browser.
     alerts: [],
     profile,
+    cv,
   });
 }
 
@@ -48,6 +53,9 @@ function pushChanges(uid: string, prev: State, next: State) {
   }
   if (next.profile && next.profile !== prev.profile) {
     setDoc(doc(db, "users", uid), { email: next.user?.email ?? "", profile: clean(next.profile), updatedAt: now }, { merge: true }).catch(report);
+  }
+  if (next.cv && next.cv !== prev.cv) {
+    setDoc(doc(db, "users", uid), { email: next.user?.email ?? "", cv: next.cv, updatedAt: now }, { merge: true }).catch(report);
   }
 }
 
