@@ -2,6 +2,7 @@ import { cacheLife } from "next/cache";
 import { collection, doc, getDoc, getDocs, getFirestore, query, where } from "firebase/firestore";
 import { app } from "./firebase";
 import type { Post } from "./blog";
+import { buildLandings, isIndexable, type Landing } from "./landing";
 import type { City, Company, GuidesContent, Job, MarketData } from "./types";
 
 // Server-only reads. lib/jobs.ts is also imported by client components, so this stays separate.
@@ -32,6 +33,44 @@ export async function getCatalog(): Promise<{ jobs: Job[]; companies: Company[];
     companies,
     cities: citySnap.docs.map((d) => ({ ...d.data(), slug: d.id }) as City),
     now: new Date().toISOString(),
+  };
+}
+
+/** Only what one job page needs, so rendering it does not load the whole catalog repeatedly. */
+export async function getJobView(id: string) {
+  "use cache";
+  cacheLife({ stale: 300, revalidate: 300, expire: 3600 });
+
+  const { jobs, companies, now } = await getCatalog();
+  // Pages rendered on demand get the param still encoded, and some ids contain ":" (seen as %3A).
+  const decoded = decodeURIComponent(id);
+  const job = jobs.find((j) => j.id === decoded);
+  if (!job) return null;
+  return {
+    job,
+    company: companies.find((c) => c.slug === job.companySlug),
+    similar: jobs.filter((j) => j.id !== job.id && (j.category === job.category || j.country === job.country)).slice(0, 4),
+    companyJobCount: jobs.filter((j) => j.companySlug === job.companySlug).length,
+    now,
+  };
+}
+
+/** Only what one browse page needs. Related pages drop their jobs because only their labels are shown. */
+export async function getLandingView(slug: string) {
+  "use cache";
+  cacheLife({ stale: 300, revalidate: 300, expire: 3600 });
+
+  const { jobs, companies, cities, now } = await getCatalog();
+  const all = buildLandings(jobs);
+  const page = all.find((p) => p.slug === slug);
+  if (!page) return null;
+  const sameKind = (p: Landing) => JSON.stringify(p.where) === JSON.stringify(page.where) || JSON.stringify(p.what) === JSON.stringify(page.what);
+  return {
+    page,
+    related: all.filter((p) => p.slug !== slug && isIndexable(p) && sameKind(p)).slice(0, 8).map(({ slug, what, where }) => ({ slug, what, where })),
+    companies: companies.filter((c) => page.jobs.some((j) => j.companySlug === c.slug)),
+    cities,
+    now,
   };
 }
 

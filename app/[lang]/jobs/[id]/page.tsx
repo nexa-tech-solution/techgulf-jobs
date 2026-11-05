@@ -3,8 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getDict, type Locale } from "@/lib/i18n";
-import { getCatalog } from "@/lib/catalog";
-import { SITE_URL, breadcrumbs, jsonLd as toJsonLd, orSample, pageMeta, snippet } from "@/lib/seo";
+import { getCatalog, getJobView } from "@/lib/catalog";
+import { PRERENDER_LIMIT, SITE_URL, breadcrumbs, jsonLd as toJsonLd, orSample, pageMeta, snippet } from "@/lib/seo";
 import { formatSalary, salaryConverted, timeAgo } from "@/lib/format";
 import { JobBadges, JobCard, jobPlace } from "@/components/job-card";
 import { JobAnalysisView } from "@/components/job-analysis";
@@ -19,20 +19,20 @@ export const instant = false;
 
 export async function generateMetadata(props: PageProps<"/[lang]/jobs/[id]">): Promise<Metadata> {
   const { lang, id } = await props.params;
-  const job = (await getCatalog()).jobs.find((j) => j.id === id);
+  const job = (await getJobView(id))?.job;
   if (!job) return {};
-  return pageMeta(lang, `/jobs/${id}`, `${job.title} at ${job.company} — ${job.city ?? "Remote"}`, snippet(job.description));
+  return pageMeta(lang, `/jobs/${job.id}`, `${job.title} at ${job.company} — ${job.city ?? "Remote"}`, snippet(job.description));
 }
 
 export async function generateStaticParams() {
   const { jobs } = await getCatalog();
-  return orSample(jobs.map((j) => ({ id: j.id })), { id: "sample" });
+  return orSample(jobs.slice(0, PRERENDER_LIMIT).map((j) => ({ id: j.id })), { id: "sample" });
 }
 
 export default async function JobPage(props: PageProps<"/[lang]/jobs/[id]">) {
   const { id } = await props.params;
   // Before Suspense: once streaming starts, the response can no longer become a real 404.
-  if (!(await getCatalog()).jobs.some((j) => j.id === id)) notFound();
+  if (!(await getJobView(id))) notFound();
   return (
     <Suspense fallback={<div className="mx-auto h-96 max-w-6xl animate-pulse px-4 py-6" />}>
       <JobContent params={props.params} />
@@ -44,11 +44,9 @@ async function JobContent({ params }: Pick<PageProps<"/[lang]/jobs/[id]">, "para
   const { lang: l, id } = await params;
   const lang = l as Locale;
   const d = getDict(lang);
-  const { jobs, companies, now } = await getCatalog();
-  const job = jobs.find((j) => j.id === id);
-  const company = companies.find((c) => c.slug === job?.companySlug);
-  if (!job || !company) notFound();
-  const similar = jobs.filter((j) => j.id !== job.id && (j.category === job.category || j.country === job.country)).slice(0, 4);
+  const view = await getJobView(id);
+  if (!view?.company) notFound();
+  const { job, company, similar, companyJobCount, now } = view;
   const conv = job.salary && salaryConverted(job.salary);
   const shareText = encodeURIComponent(`${job.title} at ${job.company} — ${job.city ?? "Remote"}`);
 
@@ -130,7 +128,7 @@ async function JobContent({ params }: Pick<PageProps<"/[lang]/jobs/[id]">, "para
               {company.industry && <div className="flex justify-between gap-4 py-2"><dt className="text-muted">{d.industry}</dt><dd className="text-end font-medium">{company.industry}</dd></div>}
               {company.hq && <div className="flex justify-between gap-4 py-2"><dt className="text-muted">{d.hq}</dt><dd className="text-end font-medium">{company.hq}</dd></div>}
             </dl>
-            <Link href={`/${lang}/companies/${company.slug}`} className="mt-1 flex min-h-11 items-center text-sm font-medium text-primary hover:underline">{d.viewAllJobs.replace("{n}", String(jobs.filter((j) => j.companySlug === company.slug).length))}</Link>
+            <Link href={`/${lang}/companies/${company.slug}`} className="mt-1 flex min-h-11 items-center text-sm font-medium text-primary hover:underline">{d.viewAllJobs.replace("{n}", String(companyJobCount))}</Link>
           </div>
         </aside>
       </div>

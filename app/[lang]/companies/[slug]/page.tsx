@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getDict, type Locale } from "@/lib/i18n";
 import { getCatalog } from "@/lib/catalog";
-import { orSample, pageMeta, snippet } from "@/lib/seo";
+import { topCounts } from "@/lib/landing";
+import { PRERENDER_LIMIT, orSample, pageMeta, snippet } from "@/lib/seo";
 import { JobCard } from "@/components/job-card";
 import { Logo } from "@/components/ui";
 import { ExternalIcon } from "@/components/icons";
@@ -23,8 +24,9 @@ export async function generateMetadata(props: PageProps<"/[lang]/companies/[slug
 }
 
 export async function generateStaticParams() {
-  const { companies } = await getCatalog();
-  return orSample(companies.map((c) => ({ slug: c.slug })), { slug: "sample" });
+  const { jobs } = await getCatalog();
+  const hiring = topCounts(jobs.map((j) => j.companySlug), PRERENDER_LIMIT);
+  return orSample(hiring.map(([slug]) => ({ slug })), { slug: "sample" });
 }
 
 export default async function CompanyPage(props: PageProps<"/[lang]/companies/[slug]">) {

@@ -33,5 +33,11 @@ export function snippet(text: string, max = 155) {
   return flat.length <= max ? flat : `${flat.slice(0, max - 1).replace(/\s\S*$/, "")}…`;
 }
 
+/**
+ * Pages built ahead of time per language on routes with many pages. Building them all ran out of memory on Vercel;
+ * the rest render on their first visit and are then cached.
+ */
+export const PRERENDER_LIMIT = 50;
+
 /** Cache Components needs at least one sample param to validate a route at build time. */
 export const orSample = <T extends object>(params: T[], sample: T) => (params.length ? params : [sample]);

@@ -3,9 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getDict, type Dict, type Locale } from "@/lib/i18n";
-import { getCatalog } from "@/lib/catalog";
+import { getCatalog, getLandingView } from "@/lib/catalog";
 import { buildLandings, cityArabic, isIndexable, topCounts, type Landing } from "@/lib/landing";
-import { breadcrumbs, jsonLd, orSample, pageMeta } from "@/lib/seo";
+import { PRERENDER_LIMIT, breadcrumbs, jsonLd, orSample, pageMeta } from "@/lib/seo";
 import { JobCard } from "@/components/job-card";
 import { Tag } from "@/components/ui";
 import type { City } from "@/lib/types";
@@ -15,7 +15,7 @@ export const instant = false;
 
 const MAX_JOBS = 30;
 
-function labels(page: Landing, d: Dict, lang: Locale, cities: City[]) {
+function labels(page: Pick<Landing, "what" | "where">, d: Dict, lang: Locale, cities: City[]) {
   const what = page.what.kind === "skill" ? page.what.skill : d.category[page.what.category];
   const where = page.where.kind === "country" ? d.country[page.where.country]
     : lang === "ar" ? cityArabic(cities, page.where.city) : page.where.city;
@@ -24,9 +24,9 @@ function labels(page: Landing, d: Dict, lang: Locale, cities: City[]) {
 
 export async function generateMetadata(props: PageProps<"/[lang]/browse/[slug]">): Promise<Metadata> {
   const { lang, slug } = await props.params;
-  const { jobs, cities } = await getCatalog();
-  const page = buildLandings(jobs).find((p) => p.slug === slug);
-  if (!page) return {};
+  const view = await getLandingView(slug);
+  if (!view) return {};
+  const { page, cities } = view;
   const d = getDict(lang as Locale);
   const { what, where } = labels(page, d, lang as Locale, cities);
   const fill = (s: string) => s.replace("{what}", what).replace("{where}", where).replace("{n}", String(page.jobs.length));
@@ -35,14 +35,13 @@ export async function generateMetadata(props: PageProps<"/[lang]/browse/[slug]">
 
 export async function generateStaticParams() {
   const { jobs } = await getCatalog();
-  return orSample(buildLandings(jobs).filter(isIndexable).map((p) => ({ slug: p.slug })), { slug: "sample" });
+  return orSample(buildLandings(jobs).filter(isIndexable).slice(0, PRERENDER_LIMIT).map((p) => ({ slug: p.slug })), { slug: "sample" });
 }
 
 export default async function BrowsePage(props: PageProps<"/[lang]/browse/[slug]">) {
   const { slug } = await props.params;
   // Before Suspense: once streaming starts, the response can no longer become a real 404.
-  const { jobs } = await getCatalog();
-  if (!buildLandings(jobs).some((p) => p.slug === slug)) notFound();
+  if (!(await getLandingView(slug))) notFound();
   return (
     <Suspense fallback={<div className="mx-auto h-64 max-w-6xl animate-pulse px-4 py-12" />}>
       <Content params={props.params} />
@@ -55,16 +54,13 @@ async function Content({ params }: Pick<PageProps<"/[lang]/browse/[slug]">, "par
   const lang = l as Locale;
   const d = getDict(lang);
   const t = d.landing;
-  const { jobs, cities, companies, now } = await getCatalog();
-  const all = buildLandings(jobs);
-  const page = all.find((p) => p.slug === slug);
-  if (!page) notFound();
+  const view = await getLandingView(slug);
+  if (!view) notFound();
+  const { page, related, cities, companies, now } = view;
   const { what, where } = labels(page, d, lang, cities);
   const newest = [...page.jobs].sort((a, b) => b.postedAt.localeCompare(a.postedAt));
   const hiring = topCounts(page.jobs.map((j) => j.companySlug), 6);
   const skills = topCounts(page.jobs.flatMap((j) => j.tags), 8).filter(([s]) => s !== what);
-  const sameKind = (p: Landing) => JSON.stringify(p.where) === JSON.stringify(page.where) || JSON.stringify(p.what) === JSON.stringify(page.what);
-  const related = all.filter((p) => p.slug !== slug && isIndexable(p) && sameKind(p)).slice(0, 8);
 
   // Written from this page's own jobs, so it is accurate and differs from page to page.
   const week = page.jobs.filter((j) => new Date(now).getTime() - new Date(j.postedAt).getTime() < 7 * 864e5).length;
