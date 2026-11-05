@@ -6,7 +6,7 @@ const OFFER = [
   /\b(work|employment|residence)? ?visa\b.{0,20}\b(is |will be |are )?(provided|sponsored|covered|arranged)\b(?=\s*($|[.,;)]|by\b|for\b))/i,
   /\bsponsorship\b.{0,20}\bfor\b.{0,20}\b(work|employment)? ?visa\b/i,
 ];
-const REFUSAL = /\b(no|not|non|unable|cannot|without|never|neither|nor|won't|must already|must have|must hold|own visa|valid visa|existing visa|require[sd]? sponsorship|need[s]? sponsorship|authori[sz]ed to work|right to work)\b|n't\b/i;
+const REFUSAL = /\b(visa card|no|not|non|unable|cannot|without|never|neither|nor|won't|must already|must have|must hold|own visa|valid visa|existing visa|require[sd]? sponsorship|need[s]? sponsorship|authori[sz]ed to work|right to work)\b|n't\b/i;
 
 /** The sentence offering visa sponsorship, or undefined when the posting does not clearly offer it. */
 export function visaOffer(text = "") {

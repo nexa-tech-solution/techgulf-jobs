@@ -9,7 +9,7 @@ import type { City, Company, GuidesContent, Job, MarketData } from "./types";
 // Cached because Firestore bills per document read: traffic must not multiply reads.
 export async function getCatalog(): Promise<{ jobs: Job[]; companies: Company[]; cities: City[]; now: string }> {
   "use cache";
-  cacheLife({ stale: 300, revalidate: 300, expire: 3600 });
+  cacheLife({ stale: 300, revalidate: 21600, expire: 86400 });
 
   const db = getFirestore(app);
   const [jobSnap, companySnap, citySnap] = await Promise.all([
@@ -39,7 +39,7 @@ export async function getCatalog(): Promise<{ jobs: Job[]; companies: Company[];
 /** Only what one job page needs, so rendering it does not load the whole catalog repeatedly. */
 export async function getJobView(id: string) {
   "use cache";
-  cacheLife({ stale: 300, revalidate: 300, expire: 3600 });
+  cacheLife({ stale: 300, revalidate: 21600, expire: 86400 });
 
   const { jobs, companies, cities, now } = await getCatalog();
   // Pages rendered on demand get the param still encoded, and some ids contain ":" (seen as %3A).
@@ -60,7 +60,7 @@ export async function getJobView(id: string) {
 /** Only what one browse page needs. Related pages drop their jobs because only their labels are shown. */
 export async function getLandingView(slug: string) {
   "use cache";
-  cacheLife({ stale: 300, revalidate: 300, expire: 3600 });
+  cacheLife({ stale: 300, revalidate: 21600, expire: 86400 });
 
   const { jobs, companies, cities, now } = await getCatalog();
   const all = buildLandings(jobs);
