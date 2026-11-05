@@ -1,3 +1,4 @@
+import { visaOffer } from "./visa-sponsorship.mjs";
 // Syncs real jobs from public ATS APIs into Firestore.
 //   npm run sync:jobs -- --dry-run                 preview, no credentials needed, writes nothing
 //   npm run sync:jobs                              write jobs, delete expired ones (run this daily)
@@ -347,8 +348,9 @@ function toJob(raw, source) {
     seniority: seniorityOf(raw.title), category,
     tags: TAGS.filter((t) => tagRe(t).test(`${raw.title}\n${raw.description}`)).slice(0, 8),
     ...(raw.salary && { salary: raw.salary }),
+    visaSponsored: !!visaOffer(raw.description),
     // The APIs do not state these. False means "not stated", never inferred.
-    visaSponsored: false, nationalsPreferred: false, directEmployer: true,
+    nationalsPreferred: false, directEmployer: true,
     description: raw.description, applyUrl: raw.url,
     postedAt: new Date(raw.postedAt).toISOString(), status: "active", synced: true,
   };
@@ -402,6 +404,7 @@ for (const source of sources) {
     total += jobs.length;
 
     if (dryRun) {
+      for (const j of jobs.filter((x) => x.visaSponsored)) console.log(`  VISA ${j.title}: ${visaOffer(j.description).trim().slice(0, 200)}`);
       for (const j of jobs.slice(0, 3)) console.log(`  [${j.category}/${j.country}/${j.city ?? "-"}/${j.mode}] ${j.title}\n    ${j.applyUrl}`);
       continue;
     }

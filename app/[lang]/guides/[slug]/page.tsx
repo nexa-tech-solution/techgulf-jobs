@@ -48,7 +48,7 @@ async function Guide({ params }: Pick<PageProps<"/[lang]/guides/[slug]">, "param
         headline: guide.title, description: guide.summary, dateModified: guide.updated, inLanguage: lang,
         url: `${SITE_URL}/${lang}/guides/${slug}`, image: `${SITE_URL}/${lang}/opengraph-image`,
         author: { "@type": "Organization", name: "TechGulf Jobs", url: SITE_URL },
-        publisher: { "@type": "Organization", name: "TechGulf Jobs", logo: { "@type": "ImageObject", url: `${SITE_URL}/icon.svg` } },
+        publisher: { "@type": "Organization", name: "TechGulf Jobs", logo: { "@type": "ImageObject", url: `${SITE_URL}/logo.png` } },
       }) }} />
       <Link href={`/${lang}/guides`} className="inline-flex h-11 items-center gap-1 text-sm text-primary"><BackIcon />{d.nav.guides}</Link>
       <div>

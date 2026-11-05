@@ -39,8 +39,10 @@ async function Results({ lang, searchParams }: { lang: Locale; searchParams: Pag
     Object.entries(sp).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v]).filter(([, v]) => v),
   );
   const { jobs, now } = await getCatalog();
+  // Cards and filters never read the description, and sending every one made this page about 10 MB.
+  const list = jobs.map((j) => ({ ...j, description: "" }));
   return (
-    <JobsBrowser key={pageOf(page)} page={pageOf(page)} d={getDict(lang)} lang={lang} jobs={jobs} now={now} initial={f}
+    <JobsBrowser key={pageOf(page)} page={pageOf(page)} d={getDict(lang)} lang={lang} jobs={list} now={now} initial={f}
       counts={{ country: count(jobs, "country"), category: count(jobs, "category") }} />
   );
 }
