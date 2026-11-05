@@ -5,7 +5,7 @@ export const LANGS = ["en", "ar"] as const;
 
 /** Title, description, canonical and hreflang for a page. `path` has no language prefix: "/jobs", or "" for home. */
 export function pageMeta(lang: string, path: string, title: string, description: string, noindex = false): Metadata {
-  const image = `/${lang}/opengraph-image`;
+  const image = "/og.jpg";
   return {
     title,
     description,

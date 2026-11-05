@@ -46,7 +46,7 @@ async function Guide({ params }: Pick<PageProps<"/[lang]/guides/[slug]">, "param
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd({
         "@context": "https://schema.org", "@type": "Article",
         headline: guide.title, description: guide.summary, dateModified: guide.updated, inLanguage: lang,
-        url: `${SITE_URL}/${lang}/guides/${slug}`, image: `${SITE_URL}/${lang}/opengraph-image`,
+        url: `${SITE_URL}/${lang}/guides/${slug}`, image: `${SITE_URL}/og.jpg`,
         author: { "@type": "Organization", name: "TechGulf Jobs", url: SITE_URL },
         publisher: { "@type": "Organization", name: "TechGulf Jobs", logo: { "@type": "ImageObject", url: `${SITE_URL}/logo.png` } },
       }) }} />
