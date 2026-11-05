@@ -47,7 +47,7 @@ export default async function LangLayout(props: LayoutProps<"/[lang]">) {
       <head>
         <ThemeScript code={themeScript} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd([
-          { "@context": "https://schema.org", "@type": "Organization", name: "TechGulf Jobs", url: SITE_URL },
+          { "@context": "https://schema.org", "@type": "Organization", name: "TechGulf Jobs", url: SITE_URL, logo: `${SITE_URL}/icon.svg` },
           { "@context": "https://schema.org", "@type": "WebSite", name: "TechGulf Jobs", url: SITE_URL, inLanguage: lang,
             potentialAction: { "@type": "SearchAction", target: `${SITE_URL}/${lang}/jobs?q={search_term_string}`, "query-input": "required name=search_term_string" } },
         ]) }} />

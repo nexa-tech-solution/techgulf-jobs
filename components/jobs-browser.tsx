@@ -3,25 +3,27 @@ import Link from "next/link";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { Dict, Locale } from "@/lib/i18n";
 import type { Job } from "@/lib/types";
-import { filterJobs, type JobFilters } from "@/lib/jobs";
+import { JOBS_PAGE_SIZE, filterJobs, type JobFilters } from "@/lib/jobs";
 import { FilterBar, SortSelect, type Patch } from "./filter-bar";
 import { JobCard } from "./job-card";
 import { SearchIcon, ShieldIcon } from "./icons";
 
 const clean = (f: JobFilters): JobFilters => Object.fromEntries(Object.entries(f).filter(([, v]) => v)) as JobFilters;
 const toQs = (f: JobFilters) => new URLSearchParams(Object.entries(clean(f)) as [string, string][]).toString();
-const PAGE = 20;
+const PAGE = JOBS_PAGE_SIZE;
 
 /**
  * Filters run in the browser — instant, no server round-trip per click.
  * The URL is kept in sync (shareable, Back button works); first paint is still server-rendered for SEO.
  */
-export function JobsBrowser({ d, lang, jobs, initial, counts, now }: {
-  d: Dict; lang: Locale; jobs: Job[]; initial: JobFilters; now: string;
+export function JobsBrowser({ page, d, lang, jobs, initial, counts, now }: {
+  page: number; d: Dict; lang: Locale; jobs: Job[]; initial: JobFilters; now: string;
   counts: { country: Record<string, number>; category: Record<string, number> };
 }) {
   const [f, setF] = useState<JobFilters>(initial);
   const [q, setQ] = useState(initial.q ?? "");
+  // Each ?page=N is a real page for search engines; "show more" then appends in place for visitors.
+  const [start, setStart] = useState((page - 1) * PAGE);
   const [limit, setLimit] = useState(PAGE);
   const deferred = useDeferredValue(f);
   const results = useMemo(() => filterJobs(jobs, deferred, new Date(now)), [jobs, deferred, now]);
@@ -29,6 +31,7 @@ export function JobsBrowser({ d, lang, jobs, initial, counts, now }: {
   const go = (patch: Patch, mode: "push" | "replace" = "push") => {
     const next = clean({ ...f, ...patch });
     setF(next);
+    setStart(0);
     setLimit(PAGE);
     const qs = toQs(next);
     history[mode === "push" ? "pushState" : "replaceState"](null, "", `/${lang}/jobs${qs ? `?${qs}` : ""}`);
@@ -37,7 +40,12 @@ export function JobsBrowser({ d, lang, jobs, initial, counts, now }: {
   // Back / Forward restore filters without reloading
   useEffect(() => {
     const onPop = () => {
-      const next = Object.fromEntries(new URLSearchParams(location.search)) as JobFilters;
+      const params = new URLSearchParams(location.search);
+      const n = Number.parseInt(params.get("page") ?? "", 10) || 1;
+      params.delete("page");
+      const next = Object.fromEntries(params) as JobFilters;
+      setStart((Math.max(1, n) - 1) * PAGE);
+      setLimit(PAGE);
       setF(next);
       setQ(next.q ?? "");
     };
@@ -76,6 +84,14 @@ export function JobsBrowser({ d, lang, jobs, initial, counts, now }: {
   if (f.direct) chips.push([{ direct: "" }, d.direct]);
   if (f.nationals) chips.push([{ nationals: "" }, d.nationals]);
   const stale = deferred !== f;
+  // A page past the end, or one that filters have made too short, falls back to the first results.
+  const from = start < results.length ? start : 0;
+  const pageHref = (n: number) => {
+    const qs = new URLSearchParams(Object.entries(clean(f)) as [string, string][]);
+    if (n > 1) qs.set("page", String(n));
+    const s = qs.toString();
+    return `/${lang}/jobs${s ? `?${s}` : ""}`;
+  };
 
   return (
     <>
@@ -120,11 +136,15 @@ export function JobsBrowser({ d, lang, jobs, initial, counts, now }: {
           <div className={`transition-opacity duration-150 ${stale ? "opacity-70" : ""}`}>
             {results.length > 0 ? (
               <div className="grid gap-3">
-                {results.slice(0, limit).map((j) => <JobCard key={j.id} job={j} d={d} lang={lang} now={now} />)}
-                {results.length > limit && (
-                  <button type="button" onClick={() => setLimit(limit + PAGE)} className="h-11 rounded-lg border border-line bg-surface text-sm font-medium hover:border-ink/30">
-                    {d.showMore.replace("{n}", String(results.length - limit))}
-                  </button>
+                {from > 0 && (
+                  <Link href={pageHref(Math.floor(from / PAGE))} className="flex h-11 items-center justify-center rounded-lg border border-line bg-surface text-sm font-medium hover:border-ink/30">{d.prevJobs}</Link>
+                )}
+                {results.slice(from, from + limit).map((j) => <JobCard key={j.id} job={j} d={d} lang={lang} now={now} />)}
+                {results.length > from + limit && (
+                  <a href={pageHref(Math.floor((from + limit) / PAGE) + 1)} onClick={(e) => { e.preventDefault(); setLimit(limit + PAGE); }}
+                    className="flex h-11 items-center justify-center rounded-lg border border-line bg-surface text-sm font-medium hover:border-ink/30">
+                    {d.showMore.replace("{n}", String(results.length - from - limit))}
+                  </a>
                 )}
               </div>
             ) : (

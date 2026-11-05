@@ -34,3 +34,6 @@ export function filterJobs(jobs: Job[], f: JobFilters, now: Date): Job[] {
 
 // USD conversion for sorting
 const RATE: Record<string, number> = { AED: 0.272, SAR: 0.267, QAR: 0.275, KWD: 3.25, OMR: 2.6, BHD: 2.65, INR: 0.012, USD: 1 };
+
+/** Jobs per ?page=N of the job list. */
+export const JOBS_PAGE_SIZE = 20;

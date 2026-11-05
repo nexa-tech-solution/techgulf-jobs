@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { getDict, type Locale } from "@/lib/i18n";
 import { getCatalog } from "@/lib/catalog";
 import { topCounts } from "@/lib/landing";
-import { PRERENDER_LIMIT, orSample, pageMeta, snippet } from "@/lib/seo";
+import { PRERENDER_LIMIT, breadcrumbs, jsonLd, orSample, pageMeta, snippet } from "@/lib/seo";
 import { JobCard } from "@/components/job-card";
 import { Logo } from "@/components/ui";
 import { ExternalIcon } from "@/components/icons";
@@ -68,6 +68,7 @@ async function CompanyContent({ params }: Pick<PageProps<"/[lang]/companies/[slu
   const facts: [string, string][] = [[d.industry, c.industry], [d.hq, c.hq], [d.employees, c.size], [d.ats, c.ats]].filter(([, v]) => v) as [string, string][];
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbs([[d.nav.companies, `/${lang}/companies`], [c.name, `/${lang}/companies/${slug}`]])) }} />
       <div className="border-b border-line">
         <div className="mx-auto max-w-6xl px-4 py-10">
           <div className="flex items-center gap-4">

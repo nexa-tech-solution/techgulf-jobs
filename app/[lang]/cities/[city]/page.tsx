@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getDict, type Locale } from "@/lib/i18n";
 import { getCatalog, getMarketData } from "@/lib/catalog";
-import { orSample, pageMeta } from "@/lib/seo";
+import { breadcrumbs, jsonLd, orSample, pageMeta } from "@/lib/seo";
 import { CATEGORIES } from "@/lib/format";
 import { JobCard } from "@/components/job-card";
 
@@ -50,6 +50,7 @@ async function CityContent({ params }: Pick<PageProps<"/[lang]/cities/[city]">, 
   const bench = (market?.benchmarks ?? []).filter((b) => b.city === c.name);
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbs([[d.nav.jobs, `/${lang}/jobs`], [d.cityJobs.replace("{city}", name), `/${lang}/cities/${city}`]])) }} />
       {/* City hero — swap gradient for a licensed skyline photo (AVIF/WebP) */}
       <div className="border-b border-line bg-surface">
         <div className="mx-auto max-w-6xl px-4 py-12">

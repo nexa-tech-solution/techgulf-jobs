@@ -3,7 +3,11 @@ import { NextResponse, type NextRequest } from "next/server";
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const pref = request.cookies.get("lang")?.value === "ar" ? "ar" : "en";
-  return NextResponse.redirect(new URL(`/${pref}${pathname === "/" ? "" : pathname}${request.nextUrl.search}`, request.url));
+  const target = new URL(`/${pref}${pathname === "/" ? "" : pathname}${request.nextUrl.search}`, request.url);
+  // "/" stays temporary. Other paths are permanent for search engines, but must not be cached
+  // by browsers, because the target depends on the visitor's language cookie.
+  if (pathname === "/") return NextResponse.redirect(target, 307);
+  return NextResponse.redirect(target, { status: 308, headers: { "Cache-Control": "no-store" } });
 }
 
 export const config = {

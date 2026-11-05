@@ -3,7 +3,8 @@ import { SITE_URL } from "@/lib/seo";
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: { userAgent: "*", allow: "/", disallow: ["/*/saved", "/*/login", "/*/onboarding", "/*/salaries/contribute"] },
+    // Private pages are noindex rather than disallowed: Google must be able to crawl them to see that.
+    rules: { userAgent: "*", allow: "/" },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

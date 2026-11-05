@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getGuidesContent } from "@/lib/catalog";
-import { orSample, pageMeta } from "@/lib/seo";
+import { SITE_URL, jsonLd, orSample, pageMeta } from "@/lib/seo";
 import { getDict, type Locale } from "@/lib/i18n";
 import { CareerBlockView, GuideCover } from "@/components/career-guides";
 import { BackIcon } from "@/components/icons";
@@ -43,6 +43,13 @@ async function Guide({ params }: Pick<PageProps<"/[lang]/guides/[slug]">, "param
   const more = content!.career!.filter((g) => g.slug !== slug).slice(0, 3);
   return (
     <article className="mx-auto max-w-4xl px-4 py-6">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd({
+        "@context": "https://schema.org", "@type": "Article",
+        headline: guide.title, description: guide.summary, dateModified: guide.updated, inLanguage: lang,
+        url: `${SITE_URL}/${lang}/guides/${slug}`, image: `${SITE_URL}/${lang}/opengraph-image`,
+        author: { "@type": "Organization", name: "TechGulf Jobs", url: SITE_URL },
+        publisher: { "@type": "Organization", name: "TechGulf Jobs", logo: { "@type": "ImageObject", url: `${SITE_URL}/icon.svg` } },
+      }) }} />
       <Link href={`/${lang}/guides`} className="inline-flex h-11 items-center gap-1 text-sm text-primary"><BackIcon />{d.nav.guides}</Link>
       <div>
         <div className="mt-2 aspect-[32/10] overflow-hidden rounded-2xl border border-line"><GuideCover kind={guide.cover} /></div>

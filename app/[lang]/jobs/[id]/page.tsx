@@ -9,6 +9,7 @@ import { formatSalary, salaryConverted, timeAgo } from "@/lib/format";
 import { JobBadges, JobCard, jobPlace } from "@/components/job-card";
 import { JobAnalysisView } from "@/components/job-analysis";
 import { analyzeJob } from "@/lib/job-analysis";
+import { cityArabic, landingLabels } from "@/lib/landing";
 import { Logo } from "@/components/ui";
 import { SaveButton } from "@/components/client";
 import { ApplyButton } from "@/components/account";
@@ -19,9 +20,12 @@ export const instant = false;
 
 export async function generateMetadata(props: PageProps<"/[lang]/jobs/[id]">): Promise<Metadata> {
   const { lang, id } = await props.params;
-  const job = (await getJobView(id))?.job;
-  if (!job) return {};
-  return pageMeta(lang, `/jobs/${job.id}`, `${job.title} at ${job.company} — ${job.city ?? "Remote"}`, snippet(job.description));
+  const view = await getJobView(id);
+  if (!view) return {};
+  const { job, cities } = view;
+  const d = getDict(lang as Locale);
+  const place = job.city ? (lang === "ar" ? cityArabic(cities, job.city) : job.city) : d.mode.remote;
+  return pageMeta(lang, `/jobs/${job.id}`, d.seo.jobTitle.replace("{title}", job.title).replace("{company}", job.company).replace("{place}", place), snippet(job.description));
 }
 
 export async function generateStaticParams() {
@@ -46,7 +50,7 @@ async function JobContent({ params }: Pick<PageProps<"/[lang]/jobs/[id]">, "para
   const d = getDict(lang);
   const view = await getJobView(id);
   if (!view?.company) notFound();
-  const { job, company, similar, companyJobCount, now } = view;
+  const { job, company, similar, companyJobCount, browse, cities, now } = view;
   const conv = job.salary && salaryConverted(job.salary);
   const shareText = encodeURIComponent(`${job.title} at ${job.company} — ${job.city ?? "Remote"}`);
 
@@ -56,7 +60,7 @@ async function JobContent({ params }: Pick<PageProps<"/[lang]/jobs/[id]">, "para
     "@context": "https://schema.org", "@type": "JobPosting",
     title: job.title, description: job.description, datePosted: job.postedAt,
     validThrough: new Date(new Date(job.postedAt).getTime() + 60 * 864e5).toISOString(),
-    url: `${SITE_URL}/en/jobs/${job.id}`,
+    url: `${SITE_URL}/${lang}/jobs/${job.id}`,
     directApply: false,
     hiringOrganization: { "@type": "Organization", name: job.company, sameAs: company.careersUrl, ...(company.logo && { logo: company.logo }) },
     ...(job.mode === "remote"
@@ -132,6 +136,15 @@ async function JobContent({ params }: Pick<PageProps<"/[lang]/jobs/[id]">, "para
           </div>
         </aside>
       </div>
+
+      {browse.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-xl font-semibold">{d.landing.related}</h2>
+          <ul className="mt-3 flex flex-wrap gap-2 text-sm">
+            {browse.map((p) => <li key={p.slug}><Link href={`/${lang}/browse/${p.slug}`} className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 hover:border-primary">{landingLabels(p, d, lang, cities).heading}</Link></li>)}
+          </ul>
+        </section>
+      )}
 
       {similar.length > 0 && (
         <section className="mt-10">

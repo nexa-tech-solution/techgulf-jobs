@@ -41,13 +41,15 @@ export async function getJobView(id: string) {
   "use cache";
   cacheLife({ stale: 300, revalidate: 300, expire: 3600 });
 
-  const { jobs, companies, now } = await getCatalog();
+  const { jobs, companies, cities, now } = await getCatalog();
   // Pages rendered on demand get the param still encoded, and some ids contain ":" (seen as %3A).
   const decoded = decodeURIComponent(id);
   const job = jobs.find((j) => j.id === decoded);
   if (!job) return null;
   return {
     job,
+    cities,
+    browse: buildLandings(jobs).filter((p) => isIndexable(p) && p.jobs.some((j) => j.id === job.id)).slice(0, 6).map(({ slug, what, where, only }) => ({ slug, what, where, only })),
     company: companies.find((c) => c.slug === job.companySlug),
     similar: jobs.filter((j) => j.id !== job.id && (j.category === job.category || j.country === job.country)).slice(0, 4),
     companyJobCount: jobs.filter((j) => j.companySlug === job.companySlug).length,
@@ -64,10 +66,13 @@ export async function getLandingView(slug: string) {
   const all = buildLandings(jobs);
   const page = all.find((p) => p.slug === slug);
   if (!page) return null;
+  const samePlace = (p: Landing) => JSON.stringify(p.where) === JSON.stringify(page.where);
   const sameKind = (p: Landing) => JSON.stringify(p.where) === JSON.stringify(page.where) || JSON.stringify(p.what) === JSON.stringify(page.what);
   return {
     page,
-    related: all.filter((p) => p.slug !== slug && isIndexable(p) && sameKind(p)).slice(0, 8).map(({ slug, what, where }) => ({ slug, what, where })),
+    related: all.filter((p) => p.slug !== slug && isIndexable(p) && sameKind(p)).slice(0, 8).map(({ slug, what, where, only }) => ({ slug, what, where, only })),
+    // Skills that have their own indexable page in this place, so the skill tags can link to it.
+    skillPages: Object.fromEntries(all.filter((p) => p.what.kind === "skill" && !p.only && isIndexable(p) && samePlace(p)).map((p) => [(p.what as { skill: string }).skill, p.slug])),
     companies: companies.filter((c) => page.jobs.some((j) => j.companySlug === c.slug)),
     cities,
     now,

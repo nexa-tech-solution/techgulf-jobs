@@ -4,23 +4,15 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getDict, type Dict, type Locale } from "@/lib/i18n";
 import { getCatalog, getLandingView } from "@/lib/catalog";
-import { buildLandings, cityArabic, isIndexable, topCounts, type Landing } from "@/lib/landing";
+import { buildLandings, isIndexable, landingLabels, topCounts } from "@/lib/landing";
 import { PRERENDER_LIMIT, breadcrumbs, jsonLd, orSample, pageMeta } from "@/lib/seo";
 import { JobCard } from "@/components/job-card";
 import { Tag } from "@/components/ui";
-import type { City } from "@/lib/types";
 
 // Allowed to block: the check before Suspense is what returns a real 404.
 export const instant = false;
 
 const MAX_JOBS = 30;
-
-function labels(page: Pick<Landing, "what" | "where">, d: Dict, lang: Locale, cities: City[]) {
-  const what = page.what.kind === "skill" ? page.what.skill : d.category[page.what.category];
-  const where = page.where.kind === "country" ? d.country[page.where.country]
-    : lang === "ar" ? cityArabic(cities, page.where.city) : page.where.city;
-  return { what, where };
-}
 
 export async function generateMetadata(props: PageProps<"/[lang]/browse/[slug]">): Promise<Metadata> {
   const { lang, slug } = await props.params;
@@ -28,9 +20,9 @@ export async function generateMetadata(props: PageProps<"/[lang]/browse/[slug]">
   if (!view) return {};
   const { page, cities } = view;
   const d = getDict(lang as Locale);
-  const { what, where } = labels(page, d, lang as Locale, cities);
-  const fill = (s: string) => s.replace("{what}", what).replace("{where}", where).replace("{n}", String(page.jobs.length));
-  return pageMeta(lang, `/browse/${slug}`, fill(d.landing.title), fill(d.landing.desc), !isIndexable(page));
+  const { what, where, heading } = landingLabels(page, d, lang as Locale, cities);
+  const desc = page.only === "visa" ? d.landing.descVisa : page.only === "salary" ? d.landing.descSalary : d.landing.desc;
+  return pageMeta(lang, `/browse/${slug}`, heading, desc.replace("{what}", what).replace("{where}", where).replace("{n}", String(page.jobs.length)), !isIndexable(page));
 }
 
 export async function generateStaticParams() {
@@ -56,8 +48,8 @@ async function Content({ params }: Pick<PageProps<"/[lang]/browse/[slug]">, "par
   const t = d.landing;
   const view = await getLandingView(slug);
   if (!view) notFound();
-  const { page, related, cities, companies, now } = view;
-  const { what, where } = labels(page, d, lang, cities);
+  const { page, related, skillPages, cities, companies, now } = view;
+  const { what, heading } = landingLabels(page, d, lang, cities);
   const newest = [...page.jobs].sort((a, b) => b.postedAt.localeCompare(a.postedAt));
   const hiring = topCounts(page.jobs.map((j) => j.companySlug), 6);
   const skills = topCounts(page.jobs.flatMap((j) => j.tags), 8).filter(([s]) => s !== what);
@@ -75,10 +67,10 @@ async function Content({ params }: Pick<PageProps<"/[lang]/browse/[slug]">, "par
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbs([[d.nav.jobs, `/${lang}/jobs`], [t.heading.replace("{what}", what).replace("{where}", where), `/${lang}/browse/${slug}`]])) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbs([[d.nav.jobs, `/${lang}/jobs`], [heading, `/${lang}/browse/${slug}`]])) }} />
       <div className="border-b border-line bg-surface">
         <div className="mx-auto max-w-6xl px-4 py-10">
-          <h1 className="text-[28px] font-bold tracking-tight md:text-[40px]">{t.heading.replace("{what}", what).replace("{where}", where)}</h1>
+          <h1 className="text-[28px] font-bold tracking-tight md:text-[40px]">{heading}</h1>
           <p className="mt-2 max-w-2xl text-muted">{t.sub.replace("{n}", String(page.jobs.length)).replace("{companies}", String(new Set(page.jobs.map((j) => j.companySlug)).size))}</p>
           {intro && <p className="mt-3 max-w-3xl text-[15px] leading-relaxed">{intro}</p>}
         </div>
@@ -102,17 +94,14 @@ async function Content({ params }: Pick<PageProps<"/[lang]/browse/[slug]">, "par
           {skills.length > 0 && (
             <section className="card p-4">
               <h2 className="font-semibold">{t.skills}</h2>
-              <div className="mt-2 flex flex-wrap gap-1.5">{skills.map(([s]) => <Tag key={s}>{s}</Tag>)}</div>
+              <div className="mt-2 flex flex-wrap gap-1.5">{skills.map(([s]) => skillPages[s] ? <Link key={s} href={`/${lang}/browse/${skillPages[s]}`} className="hover:text-primary"><Tag>{s}</Tag></Link> : <Tag key={s}>{s}</Tag>)}</div>
             </section>
           )}
           {related.length > 0 && (
             <section className="card p-4">
               <h2 className="font-semibold">{t.related}</h2>
               <ul className="mt-2 space-y-1 text-sm">
-                {related.map((p) => {
-                  const r = labels(p, d, lang, cities);
-                  return <li key={p.slug}><Link href={`/${lang}/browse/${p.slug}`} className="hover:text-primary">{t.heading.replace("{what}", r.what).replace("{where}", r.where)}</Link></li>;
-                })}
+                {related.map((p) => <li key={p.slug}><Link href={`/${lang}/browse/${p.slug}`} className="hover:text-primary">{landingLabels(p, d, lang, cities).heading}</Link></li>)}
               </ul>
             </section>
           )}
