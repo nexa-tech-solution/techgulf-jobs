@@ -1,17 +1,15 @@
-import { getCrashlytics } from "firebase/crashlytics";
-import { getPerformance } from "firebase/performance";
-import { app } from "@/lib/firebase";
+import { whenIdle } from "@/lib/idle";
 
-// Runs in the browser before hydration, so early errors and page load timings are captured.
+// These SDKs are large, so they load after the page is ready rather than delaying hydration.
+// Errors thrown before then are not captured by Crashlytics.
 // Each service is isolated so a monitoring failure can't affect the other or the app.
-try {
-  getCrashlytics(app);
-} catch (error) {
-  console.warn("Firebase Crashlytics failed to start", error);
-}
-
-try {
-  getPerformance(app);
-} catch (error) {
-  console.warn("Firebase Performance failed to start", error);
-}
+whenIdle(() => {
+  void import("@/lib/firebase").then(({ app }) => {
+    import("firebase/crashlytics")
+      .then(({ getCrashlytics }) => getCrashlytics(app))
+      .catch((error) => console.warn("Firebase Crashlytics failed to start", error));
+    import("firebase/performance")
+      .then(({ getPerformance }) => getPerformance(app))
+      .catch((error) => console.warn("Firebase Performance failed to start", error));
+  }).catch((error) => console.warn("Firebase failed to load", error));
+});
