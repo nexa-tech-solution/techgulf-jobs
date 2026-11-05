@@ -26,12 +26,12 @@ export function JobCard({ job, d, lang, now }: { job: Job; d: Dict; lang: Locale
   const company = { name: job.company, color: job.companyColor ?? "#64748b", logo: job.companyLogo };
   const conv = job.salary && salaryConverted(job.salary);
   return (
-    <article className={`card card-hover group relative p-4 md:p-5 ${job.featured ? "!border-accent/40" : ""}`}>
+    <article className={`card card-hover group relative min-w-0 p-4 md:p-5 ${job.featured ? "!border-accent/40" : ""}`}>
       <div className="flex items-start gap-3">
         <Logo company={company} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-muted">{job.company}</p>
-          <h2 className="text-[17px] font-semibold leading-snug md:text-lg">
+          <h2 className="text-[17px] font-semibold leading-snug wrap-anywhere md:text-lg">
             <Link href={`/${lang}/jobs/${job.id}`} className="after:absolute after:inset-0 group-hover:text-primary">
               <bdi>{job.title}</bdi>
             </Link>
@@ -51,7 +51,7 @@ export function JobCard({ job, d, lang, now }: { job: Job; d: Dict; lang: Locale
       )}
       <div className="mt-2 flex flex-wrap gap-1.5"><JobBadges job={job} d={d} now={now} /></div>
       <div className="mt-3 flex items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-1.5">{job.tags.slice(0, 3).map((t) => <Tag key={t}>{t}</Tag>)}</div>
+        <div className="flex min-w-0 flex-wrap gap-1.5">{job.tags.slice(0, 3).map((t) => <Tag key={t}>{t}</Tag>)}</div>
         <p className="shrink-0 text-xs text-muted">{timeAgo(job.postedAt, new Date(now), d)} · {d.source}: <span className="capitalize">{job.source}</span></p>
       </div>
     </article>
