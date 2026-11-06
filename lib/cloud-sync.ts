@@ -1,12 +1,15 @@
 import { collection, deleteDoc, doc, getDoc, getDocs, getFirestore, serverTimestamp, setDoc, writeBatch } from "firebase/firestore";
 import { app } from "@/lib/firebase";
-import { actions, getStoreState, subscribeStore, type AppStatus, type CvDraft, type Profile, type State } from "@/lib/store";
+import { actions, getStoreState, setCvCloudStatus, subscribeStore, type AppStatus, type CvDraft, type Profile, type State } from "@/lib/store";
 
 const db = getFirestore(app);
 
 // Firestore rejects undefined values, which optional fields can contain
 const clean = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
 const report = (error: unknown) => console.warn("Cloud sync write failed", error);
+
+// Only the newest write may report, so a slow older one can't overwrite its result.
+let cvWrite = 0;
 
 /** Merges this browser's data into the account: the account wins, and local-only items are uploaded. */
 async function hydrate(uid: string) {
@@ -55,7 +58,11 @@ function pushChanges(uid: string, prev: State, next: State) {
     setDoc(doc(db, "users", uid), { email: next.user?.email ?? "", profile: clean(next.profile), updatedAt: now }, { merge: true }).catch(report);
   }
   if (next.cv && next.cv !== prev.cv) {
-    setDoc(doc(db, "users", uid), { email: next.user?.email ?? "", cv: next.cv, updatedAt: now }, { merge: true }).catch(report);
+    const write = ++cvWrite;
+    setCvCloudStatus("saving");
+    setDoc(doc(db, "users", uid), { email: next.user?.email ?? "", cv: next.cv, updatedAt: now }, { merge: true })
+      .then(() => { if (write === cvWrite) setCvCloudStatus("idle"); })
+      .catch((error) => { report(error); if (write === cvWrite) setCvCloudStatus("failed"); });
   }
 }
 
@@ -64,6 +71,8 @@ let current: { uid: string; ready: Promise<void>; stop: () => void } | null = nu
 export function stopCloudSync() {
   current?.stop();
   current = null;
+  cvWrite++;
+  setCvCloudStatus("idle");
 }
 
 /** Loads the account into the store, then mirrors later changes. Safe to call repeatedly for the same user. */
@@ -83,6 +92,8 @@ export function startCloudSync(uid: string): Promise<void> {
       prev = next;
     });
   });
+  // Without this first load nothing is mirrored, so the account isn't receiving edits.
+  ready.catch(() => { if (current?.uid === uid) setCvCloudStatus("failed"); });
   current = { uid, ready, stop: () => { stopped = true; unsubscribe(); } };
   return ready;
 }

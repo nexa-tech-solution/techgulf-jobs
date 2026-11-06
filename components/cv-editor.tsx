@@ -9,18 +9,23 @@ import { CV_MAX_LENGTH, CV_TEMPLATES, parseCv, setTemplate, type CvDiagnostic, t
 import { CV_GUIDE_SNIPPETS } from "@/lib/cv-samples";
 import { profileToSource, sampleSource } from "@/lib/cv-starter";
 import type { Dict, Locale } from "@/lib/i18n";
-import { actions, useStore } from "@/lib/store";
+import { actions, useCvCloudStatus, useStore } from "@/lib/store";
 
 const CvCodeEditor = dynamic(() => import("./cv-code-editor").then((m) => m.CvCodeEditor), { ssr: false });
 
 const GUIDE_SEEN = "tgj:cv-guide-seen";
+const VIEW_KEY = "tgj:cv-view";
 const SAVE_DELAY = 1200;
 const PAPER_WIDTH = 794; // A4 at 96 dpi
 const ZOOM_STEPS = [0.5, 0.67, 0.8, 1, 1.25, 1.5];
+// Same figures as .cv-paper-screen in globals.css
+const PAGE_MM = { width: 210, margins: 30, content: 267 };
+const LONG_CV_PAGES = 2;
 
 export function CvEditor({ d, lang }: { d: Dict; lang: Locale }) {
   const t = d.cvEditor;
   const { cv, profile, user } = useStore();
+  const cloudStatus = useCvCloudStatus();
   // Holds text only while it is unsaved; otherwise the store is the source, so a newer copy from the account shows up by itself.
   const [draft, setDraft] = useState<string | null>(null);
   const source = draft ?? cv?.source ?? null;
@@ -32,9 +37,13 @@ export function CvEditor({ d, lang }: { d: Dict; lang: Locale }) {
   const [mounted, setMounted] = useState(false);
   const [exportFailed, setExportFailed] = useState(false);
   const [guide, setGuide] = useState(false);
+  const [pages, setPages] = useState(1);
+  // The text replaced by "start over", and what replaced it.
+  const [undo, setUndo] = useState<{ previous: string; next: string } | null>(null);
   const editor = useRef<CvCodeEditorHandle>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const splitRef = useRef<HTMLDivElement>(null);
+  const paperRef = useRef<HTMLDivElement>(null);
 
   const doc = useMemo(() => (source === null ? null : parseCv(source)), [source]);
   const tooLong = (source?.length ?? 0) > CV_MAX_LENGTH;
@@ -52,6 +61,8 @@ export function CvEditor({ d, lang }: { d: Dict; lang: Locale }) {
   const edit = useCallback((text: string) => {
     pending.current = text;
     setDraft(text);
+    // The code editor also reports the reset text itself, which isn't a new edit.
+    setUndo((current) => (current && current.next !== text ? null : current));
     clearTimeout(timer.current);
     timer.current = setTimeout(flush, SAVE_DELAY);
   }, [flush]);
@@ -61,7 +72,36 @@ export function CvEditor({ d, lang }: { d: Dict; lang: Locale }) {
   }, [flush]);
 
   // The print copy is attached to <body>, which only exists in the browser.
-  useEffect(() => { const id = requestAnimationFrame(() => setMounted(true)); return () => cancelAnimationFrame(id); }, []);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      setMounted(true);
+      // Read after the first render, so the server's HTML still matches.
+      try {
+        const saved = JSON.parse(localStorage.getItem(VIEW_KEY) ?? "{}");
+        if (typeof saved.split === "number" && saved.split >= 25 && saved.split <= 75) setSplit(saved.split);
+        if (ZOOM_STEPS.includes(saved.zoom)) setZoom(saved.zoom);
+      } catch { /* storage may be blocked or hold old data */ }
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
+  useEffect(() => {
+    if (!mounted) return;
+    try { localStorage.setItem(VIEW_KEY, JSON.stringify({ split, zoom })); } catch { /* storage may be blocked */ }
+  }, [mounted, split, zoom]);
+
+  // Measured as a ratio of the paper's width, so the preview's zoom doesn't change the result.
+  useEffect(() => {
+    const el = paperRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+      const { width, height } = el.getBoundingClientRect();
+      if (!width) return; // Hidden behind the code tab on phones
+      const contentMm = (height / width) * PAGE_MM.width - PAGE_MM.margins;
+      setPages(Math.max(1, Math.ceil((contentMm - 0.5) / PAGE_MM.content)));
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [source === null, gallery, tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const el = previewRef.current;
@@ -95,11 +135,27 @@ export function CvEditor({ d, lang }: { d: Dict; lang: Locale }) {
   };
   const startOver = () => {
     if (!doc || !window.confirm(t.resetConfirm)) return;
-    write(generate(doc.template));
+    const next = generate(doc.template);
+    if (source !== null) setUndo({ previous: source, next });
+    write(next);
     setGallery(false);
+  };
+  const undoStartOver = () => {
+    if (undo) edit(undo.previous);
+    setUndo(null);
+  };
+
+  /** Returns false, and shows the first error, if the person would rather fix the errors first. */
+  const okToExport = () => {
+    const count = doc?.diagnostics.length ?? 0;
+    if (!doc || !count || window.confirm(t.downloadWithErrors.replace("{n}", String(count)))) return true;
+    setTab("code");
+    requestAnimationFrame(() => editor.current?.jumpTo(doc.diagnostics[0].from));
+    return false;
   };
 
   const exportPdf = () => {
+    if (!okToExport()) return;
     flush();
     // Browsers use the page title as the suggested PDF file name.
     const title = document.title;
@@ -110,7 +166,7 @@ export function CvEditor({ d, lang }: { d: Dict; lang: Locale }) {
   };
 
   const exportWord = async (kind: "docx" | "doc") => {
-    if (!doc) return;
+    if (!doc || !okToExport()) return;
     flush();
     setExportFailed(false);
     try {
@@ -155,6 +211,7 @@ export function CvEditor({ d, lang }: { d: Dict; lang: Locale }) {
   const button = "inline-flex h-9 items-center rounded-lg border border-line px-3 text-sm font-medium hover:border-primary";
   const menuItem = "flex min-h-10 w-full items-center rounded-lg px-3 py-2 text-start text-sm font-medium hover:bg-surface-2";
   const errors = doc.diagnostics;
+  const saveFailed = !!user && cloudStatus === "failed";
 
   return (
     <div className="flex h-[calc(100dvh-4rem)] min-h-[520px] flex-col bg-surface-2">
@@ -162,9 +219,19 @@ export function CvEditor({ d, lang }: { d: Dict; lang: Locale }) {
         <h1 className="me-1 text-sm font-semibold">{t.title}</h1>
         <button type="button" onClick={() => setGallery(true)} className={button}>{t.templates}: {t.templateNames[doc.template]}</button>
         <button type="button" onClick={() => setGuide((open) => !open)} aria-expanded={guide} className={button}>{t.guide.open}</button>
-        <span role="status" className={`text-xs ${tooLong || exportFailed ? "font-medium text-danger" : "text-muted"}`}>
-          {exportFailed ? t.exportFailed : tooLong ? t.tooLong : draft !== null ? t.saving : user ? t.savedAccount : t.savedBrowser}
+        <span role="status" className={`text-xs ${tooLong || exportFailed || saveFailed ? "font-medium text-danger" : "text-muted"}`}>
+          {exportFailed ? t.exportFailed : tooLong ? t.tooLong : draft !== null || (user && cloudStatus === "saving") ? t.saving : saveFailed ? t.saveFailed : user ? t.savedAccount : t.savedBrowser}
         </span>
+        {/* Pages can only be measured while the preview is showing, which on phones means its own tab. */}
+        <span className={`text-xs ${tab === "code" ? "hidden md:inline" : ""} ${pages > LONG_CV_PAGES ? "font-medium text-ink" : "text-muted"}`}>
+          {t.pages.replace("{n}", String(pages))}{pages > LONG_CV_PAGES && ` · ${t.pagesLong}`}
+        </span>
+        {undo && (
+          <span className="flex items-center gap-2 text-xs">
+            {t.resetDone}
+            <button type="button" onClick={undoStartOver} className="h-9 rounded-lg px-2 font-semibold text-primary hover:underline">{t.undo}</button>
+          </span>
+        )}
         <div className="ms-auto flex items-center gap-2">
           <div className="hidden items-center gap-1 sm:flex" dir="ltr">
             <button type="button" onClick={() => stepZoom(-1)} aria-label={t.zoomOut} className={button}>−</button>
@@ -174,7 +241,10 @@ export function CvEditor({ d, lang }: { d: Dict; lang: Locale }) {
           <details data-menu className="relative">
             <summary className="inline-flex h-9 cursor-pointer list-none items-center rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary hover:opacity-90">{t.download}</summary>
             <div className="card animate-pop absolute end-0 top-11 z-20 w-64 p-1 shadow-lg">
-              <button type="button" onClick={(e) => { closeMenu(e); exportPdf(); }} title={t.pdfHint} className={menuItem}>{t.formatPdf}</button>
+              <button type="button" onClick={(e) => { closeMenu(e); exportPdf(); }} className={`${menuItem} flex-col !items-start`}>
+                {t.formatPdf}
+                <span className="mt-0.5 text-xs font-normal text-muted">{t.pdfHint}</span>
+              </button>
               <button type="button" onClick={(e) => { closeMenu(e); void exportDocx(); }} className={menuItem}>{t.formatDocx}</button>
               <button type="button" onClick={(e) => { closeMenu(e); void exportDoc(); }} className={menuItem}>{t.formatDoc}</button>
             </div>
@@ -222,7 +292,7 @@ export function CvEditor({ d, lang }: { d: Dict; lang: Locale }) {
 
         <section ref={previewRef} aria-label={t.tabs.preview} className={`min-h-0 min-w-0 flex-1 overflow-auto p-4 ${tab === "preview" ? "block" : "hidden md:block"}`}>
           <div className="mx-auto w-fit" style={{ zoom: scale }}>
-            <div className="cv-paper cv-paper-screen"><CvDocument doc={doc} /></div>
+            <div ref={paperRef} className="cv-paper cv-paper-screen"><CvDocument doc={doc} /></div>
           </div>
         </section>
 

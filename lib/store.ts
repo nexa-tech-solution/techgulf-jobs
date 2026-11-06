@@ -51,6 +51,22 @@ export function useStore() {
   );
 }
 
+/** Whether the account has the latest CV. Kept out of State because it must not be saved with the data it describes. */
+export type CvCloudStatus = "idle" | "saving" | "failed";
+let cvCloudStatus: CvCloudStatus = "idle";
+const cvCloudListeners = new Set<() => void>();
+export function setCvCloudStatus(status: CvCloudStatus) {
+  cvCloudStatus = status;
+  cvCloudListeners.forEach((l) => l());
+}
+export function useCvCloudStatus() {
+  return useSyncExternalStore(
+    (l) => { cvCloudListeners.add(l); return () => cvCloudListeners.delete(l); },
+    () => cvCloudStatus,
+    () => "idle" as CvCloudStatus,
+  );
+}
+
 export const subscribeStore = (listener: () => void) => {
   listeners.add(listener);
   return () => { listeners.delete(listener); };
