@@ -10,8 +10,11 @@ import { SITE_URL, jsonLd } from "@/lib/seo";
 import { CloseMenus, LangSwitch, SearchHotkey, ThemeScript, ThemeToggle } from "@/components/client";
 import { AuthSync, HeaderAccount } from "@/components/account";
 import { FirebaseAnalytics } from "@/components/firebase-analytics";
-import { MenuIcon } from "@/components/icons";
+import { FacebookIcon, LinkedInIcon, MenuIcon, XIcon } from "@/components/icons";
+import { SOCIAL_LINKS } from "@/lib/social.mjs";
 import "../globals.css";
+
+const SOCIAL_ICONS = { facebook: FacebookIcon, linkedin: LinkedInIcon, x: XIcon };
 
 const plexSans = IBM_Plex_Sans({ variable: "--font-plex-sans", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 const plexArabic = IBM_Plex_Sans_Arabic({ variable: "--font-plex-arabic", subsets: ["arabic"], weight: ["400", "500", "600", "700"], preload: false });
@@ -47,7 +50,7 @@ export default async function LangLayout(props: LayoutProps<"/[lang]">) {
       <head>
         <ThemeScript code={themeScript} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd([
-          { "@context": "https://schema.org", "@type": "Organization", name: "TechGulf Jobs", url: SITE_URL, logo: `${SITE_URL}/logo.png` },
+          { "@context": "https://schema.org", "@type": "Organization", name: "TechGulf Jobs", url: SITE_URL, logo: `${SITE_URL}/logo.png`, sameAs: SOCIAL_LINKS.map((s) => s.url) },
           { "@context": "https://schema.org", "@type": "WebSite", name: "TechGulf Jobs", url: SITE_URL, inLanguage: lang,
             potentialAction: { "@type": "SearchAction", target: `${SITE_URL}/${lang}/jobs?q={search_term_string}`, "query-input": "required name=search_term_string" } },
         ]) }} />
@@ -91,6 +94,17 @@ export default async function LangLayout(props: LayoutProps<"/[lang]">) {
             <div>
               <p className="font-bold" dir="ltr">techgulf<span className="text-primary">.</span>jobs</p>
               <p className="mt-2 text-muted">{d.brandTag}</p>
+              <p className="mt-4 font-medium">{d.followUs}</p>
+              <ul className="mt-1 -ms-3 flex">
+                {SOCIAL_LINKS.map(({ id, label, url }) => {
+                  const Icon = SOCIAL_ICONS[id as keyof typeof SOCIAL_ICONS];
+                  return (
+                    <li key={id}>
+                      <a href={url} target="_blank" rel="noopener me" aria-label={label} title={label} className="grid h-11 w-11 place-items-center rounded-lg text-muted transition hover:bg-surface-2 hover:text-ink"><Icon /></a>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
             <div className="flex flex-col gap-2">
               {nav.map(([href, label]) => <Link key={href} href={`/${lang}/${href}`} className="text-muted hover:text-ink">{label}</Link>)}

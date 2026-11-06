@@ -49,10 +49,11 @@ async function send({ to, subject, html, text, settingsUrl }) {
 }
 
 if (previewPath) {
+  const daysAgo = (days) => new Date(Date.now() - days * 86_400_000).toISOString();
   const jobs = [
-    { id: "sample-1", title: "Senior Backend Engineer", company: "Careem", city: "Dubai", countryName: "UAE", matched: ["Go", "Kafka", "AWS"] },
-    { id: "sample-2", title: "Staff Data Engineer", company: "Tamara", city: "Riyadh", countryName: "Saudi Arabia", matched: ["Python", "Spark"] },
-    { id: "sample-3", title: "Platform Engineer", company: "GitLab", city: "Bengaluru", countryName: "India", matched: ["Kubernetes"] },
+    { id: "sample-1", title: "Senior Backend Engineer", company: "Careem", city: "Dubai", countryName: "UAE", matched: ["Go", "Kafka", "AWS"], postedAt: daysAgo(0) },
+    { id: "sample-2", title: "Staff Data Engineer", company: "Tamara", city: "Riyadh", countryName: "Saudi Arabia", matched: ["Python", "Spark"], postedAt: daysAgo(1) },
+    { id: "sample-3", title: "Platform Engineer", company: "GitLab", city: "Bengaluru", countryName: "India", matched: ["Kubernetes"], postedAt: daysAgo(4) },
   ];
   writeFileSync(previewPath, renderDigest({ name: "Sample User", jobs, total: 3, siteUrl: SITE_URL }).html);
   console.log(`Preview written to ${previewPath}`);
