@@ -1,4 +1,4 @@
-import type { Block, CvDocumentModel, CvTemplate, Inline } from "@/lib/cv-latex";
+import { CV_FONTS, type Block, type CvDocumentModel, type CvTemplate, type Inline } from "@/lib/cv-latex";
 
 const SERIF: readonly CvTemplate[] = ["classic", "executive"];
 const CENTRED: readonly CvTemplate[] = ["classic", "bilingual", "fresher"];
@@ -29,7 +29,7 @@ export async function toDocxBlob(doc: CvDocumentModel): Promise<Blob> {
   // About 200 KB, so it loads only when someone downloads a Word file.
   const { AlignmentType, BorderStyle, Document, ExternalHyperlink, HeadingLevel, LevelFormat, Packer, PageBreak, Paragraph, TabStopType, TextRun } = await import("docx");
 
-  const fontName = SERIF.includes(doc.template) ? "Georgia" : "Arial";
+  const fontName = doc.font ? CV_FONTS[doc.font] : SERIF.includes(doc.template) ? "Georgia" : "Arial";
   const font = { ascii: fontName, hAnsi: fontName, cs: "Arial", eastAsia: fontName };
   const size = BODY_SIZE[doc.template] ?? 21;
   const accent = accentOf(doc);
@@ -158,7 +158,9 @@ function htmlList(block: Extract<Block, { t: "list" }>): string {
  * It is not the binary Word 97 format, which can't be produced here, so DOCX is the better choice wherever it's accepted.
  */
 export function toDocBlob(doc: CvDocumentModel): Blob {
-  const family = SERIF.includes(doc.template) ? "Georgia, serif" : "Arial, sans-serif";
+  const family = doc.font
+    ? `'${CV_FONTS[doc.font]}', ${doc.font === "georgia" || doc.font === "times" ? "serif" : "sans-serif"}`
+    : SERIF.includes(doc.template) ? "Georgia, serif" : "Arial, sans-serif";
   const align = CENTRED.includes(doc.template) ? "center" : doc.rtl ? "right" : "left";
   const accent = `#${accentOf(doc)}`;
   const body = allBlocks(doc).map((block) => {

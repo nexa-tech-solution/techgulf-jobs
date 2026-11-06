@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Diagnostic } from "@codemirror/lint";
 import { CvDocument } from "./cv-document";
+import { Select } from "./select";
 import type { CvCodeEditorHandle } from "./cv-code-editor";
-import { CV_MAX_LENGTH, CV_TEMPLATES, parseCv, setTemplate, type CvDiagnostic, type CvTemplate } from "@/lib/cv-latex";
+import { CV_FONTS, CV_MAX_LENGTH, CV_TEMPLATES, parseCv, setFont, setTemplate, type CvDiagnostic, type CvFont, type CvTemplate } from "@/lib/cv-latex";
 import { CV_GUIDE_SNIPPETS } from "@/lib/cv-samples";
 import { profileToSource, sampleSource } from "@/lib/cv-starter";
 import type { Dict, Locale } from "@/lib/i18n";
@@ -218,6 +219,8 @@ export function CvEditor({ d, lang }: { d: Dict; lang: Locale }) {
       <div className="flex flex-wrap items-center gap-2 border-b border-line bg-surface px-3 py-2">
         <h1 className="me-1 text-sm font-semibold">{t.title}</h1>
         <button type="button" onClick={() => setGallery(true)} className={button}>{t.templates}: {t.templateNames[doc.template]}</button>
+        <Select variant="toolbar" placeholder={t.font} value={doc.font ?? ""} onChange={(value) => write(setFont(source, (value || null) as CvFont | null))}
+          options={[{ value: "", label: t.fontDefault }, ...(Object.keys(CV_FONTS) as CvFont[]).map((id) => ({ value: id, label: CV_FONTS[id] }))]} />
         <button type="button" onClick={() => setGuide((open) => !open)} aria-expanded={guide} className={button}>{t.guide.open}</button>
         <span role="status" className={`text-xs ${tooLong || exportFailed || saveFailed ? "font-medium text-danger" : "text-muted"}`}>
           {exportFailed ? t.exportFailed : tooLong ? t.tooLong : draft !== null || (user && cloudStatus === "saving") ? t.saving : saveFailed ? t.saveFailed : user ? t.savedAccount : t.savedBrowser}

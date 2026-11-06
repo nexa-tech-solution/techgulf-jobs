@@ -132,6 +132,8 @@ summary::-webkit-details-marker { display: none; }
 .cv-date { flex: none; font-size: 9.5pt; color: #475569; unicode-bidi: isolate; direction: ltr; }
 .cv-org { color: #475569; }
 .cv-pagebreak { break-after: page; }
+/* A chosen font also replaces the ones templates set on headings */
+.cv-font-set h1, .cv-font-set h2, .cv-font-set h3 { font-family: inherit !important; }
 .cv-classic { font-family: Georgia, "Times New Roman", var(--font-plex-arabic), serif; }
 .cv-classic header { text-align: center; }
 .cv-classic .cv-contacts { justify-content: center; }

@@ -12,8 +12,8 @@ interface Props {
   placeholder: string;
   /** Submit as a form field via a hidden input. */
   name?: string;
-  /** "field" = full-width form control, "pill" = compact filter chip. */
-  variant?: "field" | "pill";
+  /** "field" = full-width form control, "pill" = compact filter chip, "toolbar" = matches toolbar buttons. */
+  variant?: "field" | "pill" | "toolbar";
   className?: string;
 }
 
@@ -79,7 +79,9 @@ export function Select({ options, value, defaultValue = "", onChange, placeholde
 
   const isSet = current !== "";
   const trigger =
-    variant === "pill"
+    variant === "toolbar"
+      ? `h-9 rounded-lg bg-surface px-3 text-sm font-medium ${open ? "border-primary" : "border-line hover:border-primary"}`
+      : variant === "pill"
       ? `h-10 rounded-full px-4 text-sm font-medium ${isSet ? "border-ink bg-ink text-surface" : "border-line bg-surface text-ink hover:border-ink/40"}`
       : `h-11 w-full rounded-lg px-3 text-base ${open ? "border-primary ring-4 ring-primary/15" : "border-line hover:border-ink/30"} bg-surface`;
 

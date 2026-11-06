@@ -2,11 +2,12 @@
 import { useEffect, useImperativeHandle, useRef, type Ref } from "react";
 import { basicSetup } from "codemirror";
 import { snippetCompletion, type CompletionContext } from "@codemirror/autocomplete";
+import { indentWithTab } from "@codemirror/commands";
 import { HighlightStyle, StreamLanguage, syntaxHighlighting } from "@codemirror/language";
 import { stex } from "@codemirror/legacy-modes/mode/stex";
 import { lintGutter, setDiagnostics, type Diagnostic } from "@codemirror/lint";
 import { EditorState } from "@codemirror/state";
-import { EditorView } from "@codemirror/view";
+import { EditorView, keymap } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
 
 export interface CvCodeEditorHandle { jumpTo: (pos: number) => void; insert: (text: string) => void }
@@ -35,6 +36,7 @@ const COMMANDS = [
   ["personal", "\\personal{${label}}{${value}}"],
   ["sidebar", "\\begin{sidebar}\n  ${}\n\\end{sidebar}"],
   ["accentcolor", "\\accentcolor{${0f766e}}"],
+  ["fontfamily", "\\fontfamily{${georgia}}"],
   ["newpage", "\\newpage"],
 ].map(([label, snippet]) => snippetCompletion(snippet, { label: `\\${label}`, type: "keyword" }));
 
@@ -83,6 +85,7 @@ export function CvCodeEditor({ value, onChange, diagnostics, label, ref }: Props
         doc: value,
         extensions: [
           basicSetup,
+          keymap.of([indentWithTab]),
           latex,
           latex.data.of({ autocomplete: complete }),
           syntaxHighlighting(colours),

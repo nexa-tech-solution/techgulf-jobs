@@ -1,5 +1,15 @@
 import { Fragment, type CSSProperties } from "react";
-import type { Block, CvDocumentModel, Inline } from "@/lib/cv-latex";
+import type { Block, CvDocumentModel, CvFont, Inline } from "@/lib/cv-latex";
+
+// Calibri falls back to its metric twin, then Arial, on devices without it. Arabic always uses the Arabic face.
+const ARABIC_FACE = "var(--font-plex-arabic)";
+const FONT_STACKS: Record<CvFont, string> = {
+  arial: `Arial, Helvetica, ${ARABIC_FACE}, sans-serif`,
+  calibri: `Calibri, Carlito, Arial, ${ARABIC_FACE}, sans-serif`,
+  plex: `var(--font-plex-sans), ${ARABIC_FACE}, system-ui, sans-serif`,
+  georgia: `Georgia, ${ARABIC_FACE}, serif`,
+  times: `"Times New Roman", Times, ${ARABIC_FACE}, serif`,
+};
 
 function Text({ nodes }: { nodes: Inline[] }) {
   return nodes.map((n, i) => {
@@ -48,7 +58,8 @@ function BlockView({ block }: { block: Block }) {
 /** The CV itself: the same markup is used for the preview, the template cards and the PDF. */
 export function CvDocument({ doc }: { doc: CvDocumentModel }) {
   return (
-    <article className={`cv-doc cv-${doc.template}`} dir={doc.rtl ? "rtl" : "ltr"} style={{ "--cv-accent": doc.accent } as CSSProperties}>
+    <article className={`cv-doc cv-${doc.template} ${doc.font ? "cv-font-set" : ""}`} dir={doc.rtl ? "rtl" : "ltr"}
+      style={{ "--cv-accent": doc.accent, ...(doc.font && { fontFamily: FONT_STACKS[doc.font] }) } as CSSProperties}>
       <header>
         <h1 dir="auto"><Text nodes={doc.name} /></h1>
         {doc.headline.length > 0 && <p className="cv-headline" dir="auto"><Text nodes={doc.headline} /></p>}

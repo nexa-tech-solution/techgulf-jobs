@@ -7,6 +7,15 @@
 export const CV_TEMPLATES = ["classic", "modern", "compact", "gulf", "bilingual", "executive", "engineer", "fresher", "minimal", "sidebar"] as const;
 export type CvTemplate = (typeof CV_TEMPLATES)[number];
 export const DEFAULT_ACCENT = "#0f766e";
+/** Fonts people can pick. Common on Word and in job portals, so files look the same for whoever opens them. */
+export const CV_FONTS = {
+  arial: "Arial",
+  calibri: "Calibri",
+  plex: "IBM Plex Sans",
+  georgia: "Georgia",
+  times: "Times New Roman",
+} as const;
+export type CvFont = keyof typeof CV_FONTS;
 /** Keeps the document well under Firestore's 1 MB limit, which it shares with the profile. */
 export const CV_MAX_LENGTH = 50_000;
 
@@ -26,7 +35,7 @@ export type Block =
 
 export type DiagnosticCode =
   | "unknownCommand" | "missingArg" | "missingBrace" | "strayBrace" | "unknownEnv" | "envMismatch"
-  | "missingEnd" | "missingBegin" | "itemOutside" | "textOutside" | "needItem" | "badUrl" | "badColor" | "unknownClass";
+  | "missingEnd" | "missingBegin" | "itemOutside" | "textOutside" | "needItem" | "badUrl" | "badColor" | "badFont" | "unknownClass";
 
 export interface CvDiagnostic { from: number; to: number; code: DiagnosticCode; arg: string }
 
@@ -34,6 +43,8 @@ export interface CvDocumentModel {
   template: CvTemplate;
   rtl: boolean;
   accent: string;
+  /** Null keeps the template's own font. */
+  font: CvFont | null;
   name: Inline[];
   headline: Inline[];
   contacts: Inline[][];
@@ -46,7 +57,7 @@ export interface CvDocumentModel {
 }
 
 /** Commands that start a new block, which also ends any paragraph or list item before them. */
-const BLOCK = new Set(["documentclass", "accentcolor", "name", "headline", "email", "phone", "location", "website", "personal", "section", "subsection", "entry", "skills", "newpage", "begin", "end"]);
+const BLOCK = new Set(["documentclass", "accentcolor", "fontfamily", "name", "headline", "email", "phone", "location", "website", "personal", "section", "subsection", "entry", "skills", "newpage", "begin", "end"]);
 const IGNORED = new Set(["maketitle", "noindent", "par", "centering", "hfill", "medskip", "smallskip", "bigskip", "small", "large", "normalsize", "pagestyle", "thispagestyle"]);
 /** Preamble commands from other LaTeX files: accepted with their arguments, and with no effect here. */
 const IGNORED_WITH_ARGS = new Set(["usepackage", "geometry", "vspace", "hspace", "setlength", "pagenumbering"]);
@@ -66,7 +77,7 @@ export function safeUrl(raw: string): string | null {
 }
 
 export function parseCv(src: string): CvDocumentModel {
-  const doc: CvDocumentModel = { template: "classic", rtl: false, accent: DEFAULT_ACCENT, name: [], headline: [], contacts: [], personal: [], blocks: [], side: [], diagnostics: [] };
+  const doc: CvDocumentModel = { template: "classic", rtl: false, accent: DEFAULT_ACCENT, font: null, name: [], headline: [], contacts: [], personal: [], blocks: [], side: [], diagnostics: [] };
   let i = 0;
   let phase: "before" | "body" | "after" = "before";
   const skippedEnvs: string[] = [];
@@ -291,6 +302,12 @@ export function parseCv(src: string): CvDocumentModel {
         else report(start, i, "badColor", value);
         break;
       }
+      case "fontfamily": {
+        const value = rawArg(name, start).trim();
+        if (Object.hasOwn(CV_FONTS, value)) doc.font = value as CvFont;
+        else report(start, i, "badFont", value);
+        break;
+      }
       case "name": doc.name = arg(name, start); break;
       case "headline": doc.headline = arg(name, start); break;
       case "email": {
@@ -372,6 +389,19 @@ export function parseCv(src: string): CvDocumentModel {
 export function setTemplate(src: string, template: CvTemplate): string {
   const line = /^([ \t]*\\documentclass(?:\[[^\]\n]*\])?\{)[^}\n]*(\})/m;
   return line.test(src) ? src.replace(line, `$1${template}$2`) : `\\documentclass{${template}}\n${src}`;
+}
+
+/** Sets the font line in the source, or removes it for the template's own font. */
+export function setFont(src: string, font: CvFont | null): string {
+  const line = /^[ \t]*\\fontfamily\{[^}\n]*\}[ \t]*\n?/m;
+  if (!font) return src.replace(line, "");
+  const command = `\\fontfamily{${font}}`;
+  if (line.test(src)) return src.replace(line, `${command}\n`);
+  const classLine = /^[ \t]*\\documentclass(?:\[[^\]\n]*\])?\{[^}\n]*\}[ \t]*\n?/m;
+  const match = classLine.exec(src);
+  if (!match) return `${command}\n${src}`;
+  const at = match.index + match[0].length;
+  return `${src.slice(0, at)}${match[0].endsWith("\n") ? "" : "\n"}${command}\n${src.slice(at)}`;
 }
 
 /** Escapes plain text so it can be placed safely inside the source. */
