@@ -458,4 +458,5 @@ if (removeDemo) {
   }
 }
 
-if (failed) process.exitCode = 1;
+// Exit 2 = some sources failed (partial). A crash still exits 1.
+if (failed) process.exitCode = 2;
