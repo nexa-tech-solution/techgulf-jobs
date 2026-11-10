@@ -62,10 +62,11 @@ async function JobContent({ params }: Pick<PageProps<"/[lang]/jobs/[id]">, "para
     validThrough: new Date(new Date(job.postedAt).getTime() + 60 * 864e5).toISOString(),
     url: `${SITE_URL}/${lang}/jobs/${job.id}`,
     directApply: false,
+    employmentType: employmentType(job),
     hiringOrganization: { "@type": "Organization", name: job.company, sameAs: company.careersUrl, ...(company.logo && { logo: company.logo }) },
     ...(job.mode === "remote"
       ? { jobLocationType: "TELECOMMUTE", applicantLocationRequirements: { "@type": "Country", name: countryName } }
-      : { jobLocation: { "@type": "Place", address: { "@type": "PostalAddress", ...(job.city && { addressLocality: job.city }), addressCountry: job.country } } }),
+      : { jobLocation: { "@type": "Place", address: { "@type": "PostalAddress", ...(job.city && { addressLocality: job.city, addressRegion: job.city }), addressCountry: job.country } } }),
     ...(job.salary && { baseSalary: { "@type": "MonetaryAmount", currency: job.salary.currency, value: { "@type": "QuantitativeValue", minValue: job.salary.min, maxValue: job.salary.max, unitText: job.salary.period === "month" ? "MONTH" : "YEAR" } } }),
   };
 
@@ -160,4 +161,15 @@ async function JobContent({ params }: Pick<PageProps<"/[lang]/jobs/[id]">, "para
       </div>
     </div>
   );
+}
+
+// Google's JobPosting employmentType, read from the title and description; most listings are full time.
+function employmentType(job: { title: string; description: string; seniority: string }): string[] {
+  const text = `${job.title} ${job.description.slice(0, 2000)}`.toLowerCase();
+  if (job.seniority === "intern" || /\bintern(ship)?\b/.test(text)) return ["INTERN"];
+  const types: string[] = [];
+  if (/\b(contract|contractor|freelance|fixed[- ]term)\b/.test(text)) types.push("CONTRACTOR");
+  if (/\bpart[- ]time\b/.test(text)) types.push("PART_TIME");
+  if (/\btemporary\b/.test(text)) types.push("TEMPORARY");
+  return types.length ? types : ["FULL_TIME"];
 }

@@ -1,9 +1,9 @@
-# Runs the daily job sync and email. 03:00 UTC is 07:00 in Dubai.
+# Runs the daily job sync and email. 09:00 UTC = 16:00 Vietnam (UTC+7).
 # Needs repository secrets: FIREBASE_SERVICE_ACCOUNT (the JSON file's contents), GMAIL_USER, GMAIL_APP_PASSWORD.
 name: Daily jobs
 on:
   schedule:
-    - cron: "0 3 * * *"
+    - cron: "0 9 * * *"
   workflow_dispatch:
 jobs:
   daily:
