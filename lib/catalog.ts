@@ -1,4 +1,8 @@
-import { cacheLife } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
+
+// Data only changes when scripts/daily.mjs runs (3x/week), which calls /api/revalidate.
+// The long lifetime is only a safety net; it keeps ISR writes and Firestore reads low.
+const LONG = { stale: 3600, revalidate: 604800, expire: 2592000 };
 import { collection, doc, getDoc, getDocs, getFirestore, query, where } from "firebase/firestore";
 import { app } from "./firebase";
 import type { Post } from "./blog";
@@ -9,7 +13,8 @@ import type { City, Company, GuidesContent, Job, MarketData } from "./types";
 // Cached because Firestore bills per document read: traffic must not multiply reads.
 export async function getCatalog(): Promise<{ jobs: Job[]; companies: Company[]; cities: City[]; now: string }> {
   "use cache";
-  cacheLife({ stale: 300, revalidate: 21600, expire: 86400 });
+  cacheLife(LONG);
+  cacheTag("catalog");
 
   const db = getFirestore(app);
   const [jobSnap, companySnap, citySnap] = await Promise.all([
@@ -39,7 +44,8 @@ export async function getCatalog(): Promise<{ jobs: Job[]; companies: Company[];
 /** Only what one job page needs, so rendering it does not load the whole catalog repeatedly. */
 export async function getJobView(id: string) {
   "use cache";
-  cacheLife({ stale: 300, revalidate: 21600, expire: 86400 });
+  cacheLife(LONG);
+  cacheTag("catalog");
 
   const { jobs, companies, cities, now } = await getCatalog();
   // Pages rendered on demand get the param still encoded, and some ids contain ":" (seen as %3A).
@@ -60,7 +66,8 @@ export async function getJobView(id: string) {
 /** Only what one browse page needs. Related pages drop their jobs because only their labels are shown. */
 export async function getLandingView(slug: string) {
   "use cache";
-  cacheLife({ stale: 300, revalidate: 21600, expire: 86400 });
+  cacheLife(LONG);
+  cacheTag("catalog");
 
   const { jobs, companies, cities, now } = await getCatalog();
   const all = buildLandings(jobs);
@@ -81,7 +88,8 @@ export async function getLandingView(slug: string) {
 
 export async function getMarketData(): Promise<MarketData | null> {
   "use cache";
-  cacheLife({ stale: 300, revalidate: 3600, expire: 86400 });
+  cacheLife(LONG);
+  cacheTag("catalog");
 
   const snap = await getDoc(doc(getFirestore(app), "market", "current"));
   return snap.exists() ? (snap.data() as MarketData) : null;
@@ -89,7 +97,8 @@ export async function getMarketData(): Promise<MarketData | null> {
 
 export async function getPosts(): Promise<Post[]> {
   "use cache";
-  cacheLife({ stale: 300, revalidate: 3600, expire: 86400 });
+  cacheLife(LONG);
+  cacheTag("catalog");
 
   const snap = await getDocs(collection(getFirestore(app), "posts"));
   return snap.docs
@@ -99,7 +108,8 @@ export async function getPosts(): Promise<Post[]> {
 
 export async function getGuidesContent(lang: string): Promise<GuidesContent | null> {
   "use cache";
-  cacheLife({ stale: 300, revalidate: 3600, expire: 86400 });
+  cacheLife(LONG);
+  cacheTag("catalog");
 
   const db = getFirestore(app);
   const snap = lang === "ar" ? await getDoc(doc(db, "content", "guides_ar")) : null;

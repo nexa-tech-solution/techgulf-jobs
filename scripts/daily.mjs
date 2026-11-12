@@ -21,6 +21,13 @@ if (sync === 2) {
 } else if (sync !== 0) console.warn("\nSync crashed.");
 const digest = run("2/2 Email digest", "send-digest.mjs");
 
+// Refresh the site's cache once, now that the data changed. Pages are cached for a week otherwise.
+if (!extra.length && process.env.REVALIDATE_SECRET) {
+  const url = `${process.env.SITE_URL ?? "https://www.techgulf-jobs.com"}/api/revalidate`;
+  const res = await fetch(url, { method: "POST", headers: { authorization: `Bearer ${process.env.REVALIDATE_SECRET}` } }).catch((e) => e);
+  console.log(`Revalidate: ${res?.ok ? "OK" : `failed (${res?.status ?? res})`}`);
+}
+
 console.log(`\nSync: ${sync === 0 ? "OK" : sync === 2 ? "partial" : "had errors"}. Email: ${digest === 0 ? "OK" : "had errors"}.`);
 // Partial sync (2) is a warning, not a failure.
 process.exitCode = (sync !== 0 && sync !== 2) || digest ? 1 : 0;
