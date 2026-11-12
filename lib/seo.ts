@@ -37,7 +37,7 @@ export function snippet(text: string, max = 155) {
  * Pages built ahead of time per language on routes with many pages. Building them all ran out of memory on Vercel;
  * the rest render on their first visit and are then cached.
  */
-export const PRERENDER_LIMIT = 50;
+export const PRERENDER_LIMIT = 5;
 
 /** Cache Components needs at least one sample param to validate a route at build time. */
 export const orSample = <T extends object>(params: T[], sample: T) => (params.length ? params : [sample]);
